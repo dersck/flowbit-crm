@@ -4,6 +4,13 @@ import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import type { User as AppUser } from '@/types';
 
+const toDate = (val: any) => {
+    if (!val) return null;
+    if (typeof val.toDate === 'function') return val.toDate();
+    if (val instanceof Date) return val;
+    return null;
+};
+
 interface AuthContextType {
     user: FirebaseUser | null;
     appUser: AppUser | null;
@@ -33,8 +40,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 setAppUser({
                     id: userDoc.id,
                     ...data,
-                    createdAt: data.createdAt?.toDate(),
-                    updatedAt: data.updatedAt?.toDate(),
+                    createdAt: toDate(data.createdAt),
+                    updatedAt: toDate(data.updatedAt),
                 } as AppUser);
             } else {
                 setAppUser(null);
