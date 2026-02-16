@@ -1,5 +1,6 @@
-import { useWorkspaceQuery } from '@/hooks/useFirestore';
-import type { Task, Project, Client } from '@/types';
+import { useState, useMemo } from 'react';
+import { useWorkspaceQuery, useWorkspaceMutation } from '@/hooks/useFirestore';
+import type { Task, Project, Client, Activity as ActivityType } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
     CheckCircle2,
@@ -8,10 +9,25 @@ import {
     Users,
     TrendingUp,
     AlertCircle,
-    Activity
+    Activity,
+    UserPlus,
+    Calendar as CalendarIcon
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { isToday, isPast } from 'date-fns';
+import {
+    isToday,
+    isPast,
+    isSameDay,
+    startOfWeek,
+    endOfWeek,
+    eachDayOfInterval,
+    format,
+    subDays,
+    isWithinInterval,
+    startOfMonth,
+    endOfMonth
+} from 'date-fns';
+import { es } from 'date-fns/locale';
 import {
     AreaChart,
     Area,
@@ -24,39 +40,152 @@ import {
     Bar,
     Cell
 } from 'recharts';
-
-const taskData = [
-    { name: 'Lun', completed: 4 },
-    { name: 'Mar', completed: 7 },
-    { name: 'Mie', completed: 5 },
-    { name: 'Jue', completed: 8 },
-    { name: 'Vie', completed: 12 },
-    { name: 'Sab', completed: 6 },
-    { name: 'Dom', completed: 3 },
-];
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 const COLORS = ['#10b981', '#6366f1', '#f59e0b', '#ef4444'];
 
-export default function DashboardPage() {
-    const { data: tasks } = useWorkspaceQuery<Task>('tasks', 'today-dashboard');
-    const { data: projects } = useWorkspaceQuery<Project>('projects', 'active-projects');
-    const { data: clients } = useWorkspaceQuery<Client>('clients', 'prospects');
+type TimeRange = 'hoy' | 'semana' | 'mes';
 
-    const todayTasks = tasks?.filter(t => t.scheduledDate && (isToday(new Date(t.scheduledDate)) || isPast(new Date(t.scheduledDate))) && t.status !== 'done') || [];
-    const activeProjects = projects?.filter(p => p.status === 'active') || [];
-    const prospects = clients?.filter(c => c.stage === 'prospecto') || [];
+export default function DashboardPage() {
+    const [range, setRange] = useState<TimeRange>('semana');
+    const [isInviteOpen, setIsInviteOpen] = useState(false);
+    const [inviteEmail, setInviteEmail] = useState('');
+
+    const { data: tasks } = useWorkspaceQuery<Task>('tasks', 'dashboard-tasks');
+    const { data: projects } = useWorkspaceQuery<Project>('projects', 'dashboard-projects');
+    const { data: clients } = useWorkspaceQuery<Client>('clients', 'dashboard-clients');
+    const { data: activities } = useWorkspaceQuery<ActivityType>('activities', 'dashboard-activities');
+
+    const { updateMutation } = useWorkspaceMutation('tasks');
+
+    // 1. Filter Tasks for "Prioridades de Hoy"
+    const todayTasks = useMemo(() => tasks?.filter(t => {
+        if (!t.scheduledDate || t.status === 'done') return false;
+        const d = new Date(t.scheduledDate + 'T00:00:00');
+        return isToday(d) || isPast(d);
+    }) || [], [tasks]);
+
+    // 2. Stats Calculation based on range
+    const stats = useMemo(() => {
+        const now = new Date();
+        let interval: { start: Date; end: Date };
+
+        if (range === 'hoy') {
+            interval = { start: now, end: now };
+        } else if (range === 'semana') {
+            interval = { start: startOfWeek(now, { weekStartsOn: 1 }), end: endOfWeek(now, { weekStartsOn: 1 }) };
+        } else {
+            interval = { start: startOfMonth(now), end: endOfMonth(now) };
+        }
+
+        const filteredTasksCount = tasks?.filter(t => t.completedAt && isWithinInterval(new Date(t.completedAt), interval)).length || 0;
+        const newProjectsCount = projects?.filter(p => p.createdAt && isWithinInterval(new Date(p.createdAt), interval)).length || 0;
+        const newClientsCount = clients?.filter(c => c.createdAt && isWithinInterval(new Date(c.createdAt), interval)).length || 0;
+        const rangeActivitiesCount = activities?.filter(a => a.date && isWithinInterval(new Date(a.date), interval)).length || 0;
+
+        return {
+            tasksCompleted: filteredTasksCount,
+            projectsStarted: newProjectsCount,
+            clientsAdded: newClientsCount,
+            activitiesCount: rangeActivitiesCount
+        };
+    }, [range, tasks, projects, clients, activities]);
+
+    // 3. Weekly Chart Data (Real data based on tasks completed)
+    const chartData = useMemo(() => {
+        const end = new Date();
+        const start = subDays(end, 6);
+        const days = eachDayOfInterval({ start, end });
+
+        return days.map(day => {
+            const completedOnDay = tasks?.filter(t =>
+                t.status === 'done' &&
+                t.completedAt &&
+                isSameDay(new Date(t.completedAt), day)
+            ).length || 0;
+
+            return {
+                name: format(day, 'EEE', { locale: es }),
+                completed: completedOnDay
+            };
+        });
+    }, [tasks]);
+
+    // 4. Projects Status Distribution
+    const projectDistribution = useMemo(() => [
+        { name: 'Activos', value: projects?.filter(p => p.status === 'active').length || 0 },
+        { name: 'En Pausa', value: projects?.filter(p => p.status === 'on_hold').length || 0 },
+        { name: 'Finalizados', value: projects?.filter(p => p.status === 'done').length || 0 },
+    ], [projects]);
+
+    const handleInvite = () => {
+        setIsInviteOpen(true);
+    };
+
+    const sendInvite = async () => {
+        if (!inviteEmail) return;
+        toast.promise(new Promise(resolve => setTimeout(resolve, 1500)), {
+            loading: 'Enviando invitación...',
+            success: 'Invitación enviada correctamente',
+            error: 'Error al enviar invitación'
+        });
+        setIsInviteOpen(false);
+        setInviteEmail('');
+    };
+
+    const toggleTask = async (task: Task) => {
+        try {
+            await updateMutation.mutateAsync({
+                id: task.id,
+                data: {
+                    status: 'done',
+                    completedAt: new Date()
+                }
+            });
+            toast.success('¡Tarea completada!');
+        } catch (e) {
+            toast.error('Error al actualizar tarea');
+        }
+    };
 
     return (
         <div className="space-y-8 max-w-7xl mx-auto pb-10">
-            <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div>
+                    <div className="flex items-center gap-3 mb-2">
+                        <div className="h-8 w-8 bg-emerald-600 rounded-lg flex items-center justify-center text-white shadow-lg">
+                            <TrendingUp className="h-5 w-5" />
+                        </div>
+                        <span className="text-xs font-black text-emerald-600 uppercase tracking-widest">Workspace Analytics</span>
+                    </div>
                     <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Panel de Control</h1>
-                    <p className="text-slate-500 mt-1 text-lg">Resumen estratégico de tu workspace.</p>
+                    <p className="text-slate-500 mt-1 text-lg">Monitorea el progreso de tu equipo en tiempo real.</p>
                 </div>
-                <div className="flex bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
-                    <button className="px-4 py-1.5 text-xs font-bold bg-slate-900 text-white rounded-lg">Hoy</button>
-                    <button className="px-4 py-1.5 text-xs font-bold text-slate-500 hover:text-slate-900 transition-colors">Semana</button>
-                    <button className="px-4 py-1.5 text-xs font-bold text-slate-500 hover:text-slate-900 transition-colors">Mes</button>
+                <div className="flex bg-white p-1 rounded-2xl border border-slate-200 shadow-sm self-start md:self-auto">
+                    {(['hoy', 'semana', 'mes'] as const).map((r) => (
+                        <button
+                            key={r}
+                            onClick={() => setRange(r)}
+                            className={cn(
+                                "px-6 py-2 text-xs font-black uppercase tracking-widest rounded-xl transition-all",
+                                range === r
+                                    ? "bg-slate-900 text-white shadow-lg"
+                                    : "text-slate-400 hover:text-slate-900"
+                            )}
+                        >
+                            {r}
+                        </button>
+                    ))}
                 </div>
             </header>
 
@@ -64,55 +193,62 @@ export default function DashboardPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard
                     label="Proyectos"
-                    value={activeProjects.length.toString()}
+                    value={projects?.filter(p => p.status === 'active').length.toString() || '0'}
+                    subValue={`${stats.projectsStarted} nuevos`}
                     icon={Briefcase}
                     color="text-emerald-600"
                     bg="bg-emerald-50"
-                    trend="+12%"
+                    trend={stats.projectsStarted > 0 ? `+${stats.projectsStarted}` : '0'}
                 />
                 <StatCard
-                    label="Tareas Hoy"
-                    value={todayTasks.length.toString()}
+                    label="Tareas Listas"
+                    value={tasks?.filter(t => t.status === 'done').length.toString() || '0'}
+                    subValue={`${stats.tasksCompleted} completadas`}
                     icon={CheckCircle2}
                     color="text-indigo-600"
                     bg="bg-indigo-50"
-                    trend="-2"
+                    trend={stats.tasksCompleted > 0 ? `+${stats.tasksCompleted}` : '0'}
                 />
                 <StatCard
                     label="Prospectos"
-                    value={prospects.length.toString()}
+                    value={clients?.filter(c => c.stage === 'prospecto').length.toString() || '0'}
+                    subValue={`${stats.clientsAdded} este ${range}`}
                     icon={Users}
                     color="text-amber-600"
                     bg="bg-amber-50"
-                    trend="+5"
+                    trend={stats.clientsAdded > 0 ? `+${stats.clientsAdded}` : '0'}
                 />
                 <StatCard
-                    label="Actividad"
-                    value="24"
+                    label="Interacciones"
+                    value={activities?.length.toString() || '0'}
+                    subValue={`${stats.activitiesCount} registradas`}
                     icon={Activity}
                     color="text-rose-600"
                     bg="bg-rose-50"
-                    trend="Estable"
+                    trend="Activo"
                 />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Main Chart */}
-                <Card className="lg:col-span-2 border-slate-200 shadow-xl shadow-slate-200/50 rounded-3xl overflow-hidden bg-white">
-                    <CardHeader className="px-8 py-6 border-b border-slate-50 flex flex-row items-center justify-between">
+                {/* Main Activity Chart */}
+                <Card className="lg:col-span-2 border-slate-200 shadow-xl shadow-slate-200/50 rounded-[2.5rem] overflow-hidden bg-white">
+                    <CardHeader className="px-8 py-8 border-b border-slate-50 flex flex-row items-center justify-between">
                         <div>
-                            <CardTitle className="text-xl font-bold tracking-tight">Rendimiento Semanal</CardTitle>
-                            <p className="text-sm text-slate-400 font-medium">Tareas completadas por día</p>
+                            <CardTitle className="text-xl font-black tracking-tight text-slate-900 uppercase">Rendimiento de Tareas</CardTitle>
+                            <p className="text-sm text-slate-400 font-bold mt-1">Comparativa de productividad diaria</p>
                         </div>
-                        <TrendingUp className="h-6 w-6 text-emerald-500 bg-emerald-50 p-1 rounded-lg" />
+                        <div className="flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-xl border border-slate-100">
+                            <CalendarIcon className="h-4 w-4 text-slate-400" />
+                            <span className="text-xs font-black text-slate-500 uppercase tracking-wider">Últimos 7 días</span>
+                        </div>
                     </CardHeader>
                     <CardContent className="p-8">
-                        <div className="h-[300px] w-full">
+                        <div className="h-[350px] w-full">
                             <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart data={taskData}>
+                                <AreaChart data={chartData}>
                                     <defs>
                                         <linearGradient id="colorComp" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.1} />
+                                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.2} />
                                             <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                                         </linearGradient>
                                     </defs>
@@ -121,24 +257,27 @@ export default function DashboardPage() {
                                         dataKey="name"
                                         axisLine={false}
                                         tickLine={false}
-                                        tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 600 }}
-                                        dy={10}
+                                        tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 800, textTransform: 'uppercase' }}
+                                        dy={15}
                                     />
                                     <YAxis
                                         axisLine={false}
                                         tickLine={false}
-                                        tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 600 }}
+                                        tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 700 }}
                                     />
                                     <Tooltip
-                                        contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', fontWeight: 'bold' }}
+                                        contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 25px 50px -12px rgb(0 0 0 / 0.15)', padding: '16px' }}
+                                        itemStyle={{ fontWeight: 'black', color: '#0f172a' }}
                                     />
                                     <Area
                                         type="monotone"
                                         dataKey="completed"
+                                        name="Completadas"
                                         stroke="#10b981"
-                                        strokeWidth={3}
+                                        strokeWidth={4}
                                         fillOpacity={1}
                                         fill="url(#colorComp)"
+                                        animationDuration={1500}
                                     />
                                 </AreaChart>
                             </ResponsiveContainer>
@@ -147,32 +286,28 @@ export default function DashboardPage() {
                 </Card>
 
                 {/* Status Distribution */}
-                <Card className="border-slate-200 shadow-xl shadow-slate-200/50 rounded-3xl overflow-hidden bg-white">
-                    <CardHeader className="px-8 py-6 border-b border-slate-50">
-                        <CardTitle className="text-xl font-bold tracking-tight">Estado Proyectos</CardTitle>
+                <Card className="border-slate-200 shadow-xl shadow-slate-200/50 rounded-[2.5rem] overflow-hidden bg-white">
+                    <CardHeader className="px-8 py-8 border-b border-slate-50">
+                        <CardTitle className="text-xl font-black tracking-tight text-slate-900 uppercase">Mix de Proyectos</CardTitle>
                     </CardHeader>
                     <CardContent className="p-8">
-                        <div className="h-[200px] w-full">
+                        <div className="h-[250px] w-full">
                             <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={[
-                                    { name: 'Activos', value: 8 },
-                                    { name: 'Espera', value: 4 },
-                                    { name: 'Fin.', value: 12 },
-                                ]}>
+                                <BarChart data={projectDistribution}>
                                     <XAxis dataKey="name" hide />
-                                    <Tooltip cursor={{ fill: 'transparent' }} />
-                                    <Bar dataKey="value" radius={[10, 10, 10, 10]} barSize={40}>
-                                        {[0, 1, 2].map((entry, index) => (
+                                    <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '15px' }} />
+                                    <Bar dataKey="value" radius={[12, 12, 12, 12]} barSize={50}>
+                                        {projectDistribution.map((_, index) => (
                                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                         ))}
                                     </Bar>
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>
-                        <div className="mt-8 space-y-4">
-                            <StatusRow label="Proyectos Activos" count={8} color="bg-emerald-500" />
-                            <StatusRow label="En Seguimiento" count={4} color="bg-indigo-500" />
-                            <StatusRow label="Completados" count={12} color="bg-amber-500" />
+                        <div className="mt-10 space-y-5">
+                            {projectDistribution.map((item, i) => (
+                                <StatusRow key={item.name} label={item.name} count={item.value} color={COLORS[i % COLORS.length]} />
+                            ))}
                         </div>
                     </CardContent>
                 </Card>
@@ -180,105 +315,160 @@ export default function DashboardPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Today's Tasks */}
-                <Card className="lg:col-span-2 border-slate-200 shadow-sm rounded-3xl overflow-hidden bg-white border-dashed border-2">
-                    <CardHeader className="border-b border-slate-50 px-8 py-6 flex flex-row items-center justify-between">
-                        <CardTitle className="text-xl font-bold flex items-center gap-3">
-                            <div className="bg-indigo-50 p-2 rounded-xl">
-                                <Clock className="h-5 w-5 text-indigo-500" />
+                <Card className="lg:col-span-2 border-slate-200 shadow-xl shadow-slate-100 rounded-[2.5rem] overflow-hidden bg-white border-dashed border-2">
+                    <CardHeader className="border-b border-slate-50 px-8 py-8 flex flex-row items-center justify-between bg-slate-50/30">
+                        <CardTitle className="text-xl font-black flex items-center gap-4 text-slate-900 uppercase">
+                            <div className="bg-indigo-600 p-2.5 rounded-2xl shadow-indigo-200 shadow-lg">
+                                <Clock className="h-6 w-6 text-white" />
                             </div>
                             Prioridades de Hoy
                         </CardTitle>
-                        <span className="text-xs font-bold text-slate-400 bg-slate-100 px-3 py-1 rounded-full">
-                            {todayTasks.length} Tareas
+                        <span className="text-[10px] font-black text-slate-500 bg-white border border-slate-200 px-4 py-1.5 rounded-full shadow-sm">
+                            {todayTasks.length} PENDIENTES
                         </span>
                     </CardHeader>
                     <CardContent className="p-0">
                         {todayTasks.length > 0 ? (
                             <div className="divide-y divide-slate-50">
                                 {todayTasks.map((task) => (
-                                    <div key={task.id} className="flex items-center gap-5 px-8 py-5 hover:bg-slate-50/50 transition-colors group">
-                                        <div className="h-2.5 w-2.5 rounded-full bg-indigo-400 group-hover:scale-125 transition-transform" />
+                                    <div key={task.id} className="flex items-center gap-6 px-8 py-6 hover:bg-slate-50 transition-all group">
+                                        <div className="h-3 w-3 rounded-full bg-indigo-500 group-hover:scale-150 transition-all shadow-lg shadow-indigo-100" />
                                         <div className="flex-1">
-                                            <p className="font-bold text-slate-700 leading-none">{task.title}</p>
-                                            <p className="text-xs text-slate-400 mt-1.5 font-medium">
-                                                {task.projectId ? 'Proyecto de Implementación' : 'Sin proyecto asignado'}
+                                            <p className="font-bold text-slate-800 text-lg leading-tight group-hover:text-indigo-600 transition-colors tracking-tight">{task.title}</p>
+                                            <p className="text-xs text-slate-400 mt-1.5 font-bold uppercase tracking-widest">
+                                                {task.projectId ? 'Proyecto Asignado' : 'Inbox / General'}
                                             </p>
                                         </div>
-                                        <div className="flex items-center gap-3">
-                                            {isPast(new Date(task.scheduledDate || '')) && !isToday(new Date(task.scheduledDate || '')) && (
-                                                <span className="flex items-center gap-1.5 text-[10px] font-black text-rose-500 bg-rose-50 px-2.5 py-1 rounded-lg uppercase tracking-wider border border-rose-100">
+                                        <div className="flex items-center gap-4">
+                                            {task.scheduledDate && isPast(new Date(task.scheduledDate + 'T00:00:00')) && !isToday(new Date(task.scheduledDate + 'T00:00:00')) && (
+                                                <span className="flex items-center gap-2 text-[10px] font-black text-rose-600 bg-rose-50 px-3 py-1.5 rounded-xl border border-rose-100 uppercase tracking-tighter">
                                                     <AlertCircle className="h-3 w-3" />
-                                                    Atrasada
+                                                    Retrasada
                                                 </span>
                                             )}
-                                            <button className="h-8 w-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-slate-900 hover:text-white hover:border-slate-900 transition-all">
-                                                <Plus className="h-4 w-4" />
+                                            <button
+                                                onClick={() => toggleTask(task)}
+                                                className="h-10 w-10 rounded-2xl border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-slate-900 hover:text-white hover:border-slate-900 hover:shadow-xl transition-all scale-90 group-hover:scale-100"
+                                            >
+                                                <CheckCircle2 className="h-5 w-5" />
                                             </button>
                                         </div>
                                     </div>
                                 ))}
                             </div>
                         ) : (
-                            <div className="p-20 text-center">
-                                <div className="bg-slate-50 h-16 w-16 rounded-3xl flex items-center justify-center mx-auto mb-4">
-                                    <CheckCircle2 className="h-8 w-8 text-slate-200" />
+                            <div className="p-24 text-center">
+                                <div className="bg-emerald-50 h-20 w-20 rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-emerald-50 shadow-inner">
+                                    <CheckCircle2 className="h-10 w-10 text-emerald-500" />
                                 </div>
-                                <h3 className="text-lg font-bold text-slate-400">Todo bajo control</h3>
-                                <p className="text-sm text-slate-400 mt-1 max-w-[200px] mx-auto">No tienes tareas urgentes pendientes para el día de hoy.</p>
+                                <h3 className="text-2xl font-black text-slate-900 tracking-tighter uppercase">Todo al día</h3>
+                                <p className="text-slate-400 font-bold mt-2 max-w-[250px] mx-auto">Has completado todas tus prioridades para hoy. ¡Buen trabajo!</p>
                             </div>
                         )}
                     </CardContent>
                 </Card>
 
-                {/* Pro Invite / Upsell */}
+                {/* Team & Growth */}
                 <div className="space-y-6">
-                    <Card className="border-none bg-gradient-to-br from-indigo-600 to-indigo-800 shadow-2xl shadow-indigo-200 rounded-3xl p-8 text-white relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 h-32 w-32 bg-white/10 rounded-full -translate-y-16 translate-x-16 group-hover:scale-150 transition-transform duration-700" />
+                    <Card className="border-none bg-gradient-to-br from-slate-900 to-slate-800 shadow-2xl shadow-slate-300 rounded-[2.5rem] p-10 text-white relative overflow-hidden group min-h-[300px] flex flex-col justify-between">
+                        <div className="absolute top-0 right-0 h-40 w-40 bg-white/5 rounded-full -translate-y-20 translate-x-20 group-hover:scale-150 transition-transform duration-1000" />
                         <div className="relative z-10">
-                            <h3 className="text-2xl font-black tracking-tight mb-2">Flowbit Pro</h3>
-                            <p className="text-indigo-100 text-sm leading-relaxed mb-6 opacity-80">
-                                Desbloquea tableros colaborativos, automatizaciones de WhatsApp y reportes avanzados.
+                            <h3 className="text-3xl font-black tracking-tighter mb-3 uppercase leading-none">Flowbit <span className="text-emerald-500">Elite</span></h3>
+                            <p className="text-slate-400 text-sm font-bold leading-relaxed mb-8">
+                                Automatiza tu CRM con integraciones de WhatsApp e Inteligencia Artificial.
                             </p>
-                            <button className="w-full py-4 bg-white text-indigo-700 rounded-2xl text-sm font-black shadow-xl hover:bg-indigo-50 transition-colors">
-                                Mejorar Plan
-                            </button>
                         </div>
+                        <button className="relative z-10 w-full py-5 bg-emerald-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-2xl shadow-emerald-900/40 hover:bg-emerald-500 transition-all hover:-translate-y-1 active:translate-y-0">
+                            Mejorar Plan
+                        </button>
                     </Card>
 
-                    <div className="bg-white border border-slate-200 rounded-3xl p-6 flex items-center gap-4">
-                        <div className="h-12 w-12 rounded-2xl bg-slate-50 flex items-center justify-center border border-slate-100 shadow-sm">
-                            <Users className="h-6 w-6 text-slate-400" />
+                    <div className="bg-white border-2 border-slate-100 rounded-[2rem] p-8 flex items-center gap-6 shadow-xl shadow-slate-100/50 hover:border-emerald-500/20 transition-all group">
+                        <div className="h-14 w-14 rounded-2xl bg-slate-900 flex items-center justify-center shadow-lg group-hover:rotate-6 transition-transform">
+                            <Users className="h-7 w-7 text-white" />
                         </div>
-                        <div>
-                            <p className="text-sm font-bold text-slate-900">Equipo (1/5)</p>
-                            <p className="text-xs text-slate-400 font-medium">4 espacios disponibles</p>
+                        <div className="flex-1">
+                            <p className="text-xs font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Tu Equipo</p>
+                            <p className="text-lg font-black text-slate-900 tracking-tight">1 / 5 Miembros</p>
                         </div>
-                        <button className="ml-auto text-emerald-600 font-bold text-xs hover:underline">Invitar</button>
+                        <button
+                            onClick={handleInvite}
+                            className="h-12 w-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all shadow-sm"
+                        >
+                            <UserPlus className="h-6 w-6" />
+                        </button>
                     </div>
                 </div>
             </div>
+
+            {/* Invite Member Dialog */}
+            <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
+                <DialogContent className="rounded-3xl border-none shadow-2xl p-8 max-w-sm">
+                    <DialogHeader>
+                        <DialogTitle className="text-2xl font-black tracking-tight uppercase flex items-center gap-3">
+                            <div className="h-10 w-10 bg-emerald-600 rounded-xl flex items-center justify-center text-white shadow-lg">
+                                <UserPlus className="h-6 w-6" />
+                            </div>
+                            Invitar Miembro
+                        </DialogTitle>
+                        <DialogDescription className="text-sm font-bold text-slate-500 mt-2">
+                            Envía una invitación para unirse a tu workspace.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-6">
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Correo Electrónico</label>
+                            <Input
+                                placeholder="ejemplo@flowbit.com"
+                                className="h-12 rounded-xl border-slate-200 focus:ring-emerald-500/20"
+                                value={inviteEmail}
+                                onChange={(e) => setInviteEmail(e.target.value)}
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter className="flex flex-col gap-3">
+                        <Button
+                            className="w-full h-12 rounded-xl font-black uppercase tracking-widest shadow-lg shadow-emerald-100 bg-emerald-600 hover:bg-emerald-700"
+                            onClick={sendInvite}
+                        >
+                            Enviar Invitación
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            className="w-full h-12 rounded-xl font-bold text-slate-400 hover:text-slate-900"
+                            onClick={() => setIsInviteOpen(false)}
+                        >
+                            Cancelar
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
 
-function StatCard({ label, value, icon: Icon, color, bg, trend }: any) {
+function StatCard({ label, value, subValue, icon: Icon, color, bg, trend }: any) {
     return (
-        <Card className="border-slate-200 shadow-sm rounded-3xl overflow-hidden bg-white group hover:shadow-xl hover:border-emerald-500/20 transition-all duration-300">
-            <CardContent className="p-7">
-                <div className="flex justify-between items-start mb-4">
-                    <div className={cn("h-14 w-14 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 group-hover:rotate-3 duration-500 border border-slate-100 shadow-sm", bg, color)}>
-                        <Icon className="h-8 w-8" />
+        <Card className="border-slate-200 shadow-xl shadow-slate-200/40 rounded-[2.5rem] overflow-hidden bg-white group hover:shadow-2xl hover:border-emerald-500/10 transition-all duration-500 border-2">
+            <CardContent className="p-8">
+                <div className="flex justify-between items-start mb-6">
+                    <div className={cn("h-16 w-16 rounded-2xl flex items-center justify-center transition-all group-hover:scale-110 group-hover:-rotate-3 duration-500 border border-slate-100 shadow-sm", bg, color)}>
+                        <Icon className="h-9 w-9" />
                     </div>
-                    <span className={cn(
-                        "text-[10px] font-black px-2 py-1 rounded-lg uppercase tracking-widest",
-                        trend.startsWith('+') ? "bg-emerald-50 text-emerald-600" : trend.startsWith('-') ? "bg-rose-50 text-rose-600" : "bg-slate-50 text-slate-400"
+                    <div className={cn(
+                        "text-[10px] font-black px-3 py-1.5 rounded-xl uppercase tracking-widest border",
+                        trend !== '0' && trend !== 'Activo' ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-slate-50 text-slate-400 border-slate-100"
                     )}>
                         {trend}
-                    </span>
+                    </div>
                 </div>
                 <div>
-                    <p className="text-2xl font-black text-slate-900 tracking-tighter leading-none">{value}</p>
-                    <p className="text-xs font-bold text-slate-400 uppercase mt-2 tracking-widest">{label}</p>
+                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-[0.15em] mb-1">{label}</h4>
+                    <p className="text-4xl font-black text-slate-900 tracking-tighter leading-none">{value}</p>
+                    <p className="text-xs font-bold text-slate-500 mt-3 flex items-center gap-1.5 opacity-60">
+                        <TrendingUp className="h-3 w-3" />
+                        {subValue}
+                    </p>
                 </div>
             </CardContent>
         </Card>
@@ -287,12 +477,18 @@ function StatCard({ label, value, icon: Icon, color, bg, trend }: any) {
 
 function StatusRow({ label, count, color }: any) {
     return (
-        <div className="flex items-center justify-between group">
-            <div className="flex items-center gap-3">
-                <div className={cn("h-2.5 w-2.5 rounded-full shadow-sm", color)} />
-                <span className="text-sm font-bold text-slate-600 group-hover:text-slate-900 transition-colors">{label}</span>
+        <div className="flex items-center justify-between group cursor-default">
+            <div className="flex items-center gap-4">
+                <div
+                    className={cn("h-3 w-3 rounded-full shadow-lg group-hover:scale-150 transition-all duration-300")}
+                    style={{ backgroundColor: color }}
+                />
+                <span className="text-sm font-black text-slate-500 uppercase tracking-widest group-hover:text-slate-900 transition-colors">{label}</span>
             </div>
-            <span className="text-sm font-black text-slate-900">{count}</span>
+            <div className="flex items-center gap-2">
+                <span className="text-lg font-black text-slate-900 leading-none">{count}</span>
+                <span className="text-[10px] font-bold text-slate-300 uppercase">Projs</span>
+            </div>
         </div>
     );
 }

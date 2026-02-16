@@ -4,9 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
     Plus,
-    MoreHorizontal,
-    Clock,
-    CheckCircle2,
     Trash2,
     User,
     ExternalLink
@@ -23,7 +20,7 @@ const statuses = [
 
 export default function ProjectsPage() {
     const { data: projects, isLoading } = useWorkspaceQuery<Project>('projects', 'all-projects');
-    const { deleteMutation, updateMutation } = useWorkspaceMutation('projects');
+    const { deleteMutation } = useWorkspaceMutation('projects');
 
     const getProjectsByStatus = (status: string) =>
         projects?.filter(p => p.status === status) || [];
@@ -38,14 +35,6 @@ export default function ProjectsPage() {
         }
     };
 
-    const updateStatus = async (id: string, newStatus: string) => {
-        try {
-            await updateMutation.mutateAsync({ id, data: { status: newStatus } });
-            toast.success('Estado actualizado');
-        } catch (e) {
-            toast.error('Error al actualizar');
-        }
-    };
 
     if (isLoading) {
         return <div className="flex gap-8 h-[calc(100vh-10rem)] animate-pulse">
