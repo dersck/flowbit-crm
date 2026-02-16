@@ -1,0 +1,44 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isWorkspaceMember(workspaceId) {
+      return isSignedIn() && exists(/databases/$(database)/documents/workspaceMembers/$(workspaceId + "_" + request.auth.uid));
+    }
+    
+    function getMemberRole(workspaceId) {
+      return get(/databases/$(database)/documents/workspaceMembers/$(workspaceId + "_" + request.auth.uid)).data.role;
+    }
+
+    // User rules
+    match /users/{userId} {
+      allow read, write: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Workspace rules
+    match /workspaces/{workspaceId} {
+      allow read: if isWorkspaceMember(workspaceId);
+      allow create: if isSignedIn();
+      allow update: if isWorkspaceMember(workspaceId) && getMemberRole(workspaceId) in ['owner', 'admin'];
+    }
+
+    // Workspace Member rules
+    match /workspaceMembers/{memberId} {
+      allow read: if isWorkspaceMember(resource.data.workspaceId);
+      allow create: if isSignedIn(); // Allow creating the first member doc upon workspace creation
+      allow update, delete: if isWorkspaceMember(resource.data.workspaceId) && getMemberRole(resource.data.workspaceId) in ['owner', 'admin'];
+    }
+
+    // Collection rules (Clients, Projects, Tasks, Activities)
+    match /{collectionName}/{docId} {
+      allow read: if collectionName in ['clients', 'projects', 'tasks', 'activities'] && isWorkspaceMember(resource.data.workspaceId);
+      allow create: if collectionName in ['clients', 'projects', 'tasks', 'activities'] && isWorkspaceMember(request.resource.data.workspaceId);
+      allow update: if collectionName in ['clients', 'projects', 'tasks', 'activities'] && isWorkspaceMember(resource.data.workspaceId) && getMemberRole(resource.data.workspaceId) in ['owner', 'admin', 'member'];
+      allow delete: if collectionName in ['clients', 'projects', 'tasks', 'activities'] && isWorkspaceMember(resource.data.workspaceId) && getMemberRole(resource.data.workspaceId) in ['owner', 'admin'];
+    }
+  }
+}
