@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useWorkspaceQuery } from '@/hooks/useFirestore';
+import { useWorkspaceQuery, useWorkspaceMutation } from '@/hooks/useFirestore';
 import type { Task } from '@/types';
 import { Button } from '@/components/ui/button';
 import {
@@ -9,16 +9,19 @@ import {
     Calendar,
     CheckCircle2,
     MoreHorizontal,
-    Circle
+    Circle,
+    Trash2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format, isToday, isPast } from 'date-fns';
+import { isToday, isPast } from 'date-fns';
+import { toast } from 'sonner';
 
 type TaskFilter = 'inbox' | 'today' | 'upcoming' | 'done';
 
 export default function TasksPage() {
     const [filter, setFilter] = useState<TaskFilter>('today');
     const { data: tasks, isLoading } = useWorkspaceQuery<Task>('tasks', 'all-tasks');
+    const { updateMutation, deleteMutation } = useWorkspaceMutation('tasks');
 
     const filteredTasks = tasks?.filter(task => {
         switch (filter) {
@@ -35,15 +38,41 @@ export default function TasksPage() {
         }
     });
 
+    const toggleTaskStatus = async (task: Task) => {
+        const newStatus = task.status === 'done' ? 'todo' : 'done';
+        try {
+            await updateMutation.mutateAsync({
+                id: task.id,
+                data: {
+                    status: newStatus,
+                    completedAt: newStatus === 'done' ? new Date() : null
+                }
+            });
+            toast.success(newStatus === 'done' ? '¡Tarea completada!' : 'Tarea reabierta');
+        } catch (e) {
+            toast.error('Error al actualizar tarea');
+        }
+    };
+
+    const deleteTask = async (id: string) => {
+        if (!confirm('¿Estás seguro de eliminar esta tarea?')) return;
+        try {
+            await deleteMutation.mutateAsync(id);
+            toast.success('Tarea eliminada');
+        } catch (e) {
+            toast.error('Error al eliminar');
+        }
+    };
+
     if (isLoading) return <div className="space-y-4 animate-pulse">
-        {[1, 2, 3, 4, 5].map(i => <div key={i} className="h-14 bg-slate-100 rounded-xl" />)}
+        {[1, 2, 3, 4, 5].map(i => <div key={i} className="h-16 bg-white rounded-2xl border border-slate-100" />)}
     </div>;
 
     return (
-        <div className="flex gap-10 h-full">
-            {/* Sidebar Sub-nav (Things 3 Style) */}
-            <div className="w-48 flex flex-col gap-1 sticky top-6 self-start">
-                <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 px-3">Listas</h2>
+        <div className="flex flex-col lg:flex-row gap-10 h-full">
+            {/* Sidebar Sub-nav */}
+            <div className="w-full lg:w-56 flex flex-col gap-1.5 sticky top-6 self-start">
+                <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 px-3">Organización</h2>
                 <TaskNavLink
                     icon={Inbox}
                     label="Bandeja"
@@ -53,7 +82,7 @@ export default function TasksPage() {
                 />
                 <TaskNavLink
                     icon={Star}
-                    label="Hoy"
+                    label="Para Hoy"
                     active={filter === 'today'}
                     onClick={() => setFilter('today')}
                     color="text-amber-500"
@@ -76,51 +105,81 @@ export default function TasksPage() {
             </div>
 
             {/* Main Task List */}
-            <div className="flex-1 max-w-3xl">
+            <div className="flex-1 max-w-4xl">
                 <div className="flex items-center justify-between mb-8">
-                    <h1 className="text-3xl font-bold text-slate-900 tracking-tight capitalize">{filter}</h1>
-                    <Button size="sm" className="rounded-full shadow-lg shadow-emerald-100 flex gap-2">
-                        <Plus className="h-4 w-4" />
+                    <div>
+                        <h1 className="text-4xl font-black text-slate-900 tracking-tighter capitalize">{filter}</h1>
+                        <p className="text-slate-400 font-medium text-sm mt-1">
+                            {filteredTasks?.length || 0} tareas encontradas
+                        </p>
+                    </div>
+                    <Button size="lg" className="rounded-2xl shadow-xl shadow-emerald-100 flex gap-2 font-bold px-8 bg-emerald-600 hover:bg-emerald-700">
+                        <Plus className="h-5 w-5" />
                         Nueva Tarea
                     </Button>
                 </div>
 
-                <div className="space-y-px bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="space-y-3">
                     {filteredTasks?.map((task) => (
-                        <div key={task.id} className="group flex items-center gap-4 px-6 py-4 border-b border-slate-50 last:border-0 hover:bg-slate-50 transition-colors">
-                            <button className="text-slate-300 hover:text-emerald-500 transition-colors">
-                                {task.status === 'done' ? <CheckCircle2 className="h-5 w-5 text-emerald-500" /> : <Circle className="h-5 w-5" />}
+                        <div
+                            key={task.id}
+                            className="group flex items-center gap-5 px-6 py-5 bg-white rounded-2xl border border-slate-200 hover:border-emerald-500/20 hover:shadow-xl hover:shadow-slate-200/40 transition-all duration-300"
+                        >
+                            <button
+                                onClick={() => toggleTaskStatus(task)}
+                                className={cn(
+                                    "h-6 w-6 rounded-full border-2 flex items-center justify-center transition-all duration-300",
+                                    task.status === 'done'
+                                        ? "bg-emerald-500 border-emerald-500 text-white"
+                                        : "border-slate-300 text-transparent hover:border-emerald-500 hover:text-emerald-500/30"
+                                )}
+                            >
+                                <CheckCircle2 className="h-4 w-4" />
                             </button>
+
                             <div className="flex-1 min-w-0">
                                 <h3 className={cn(
-                                    "font-medium text-slate-900 truncate",
-                                    task.status === 'done' && "line-through text-slate-400"
+                                    "font-bold text-slate-900 transition-all text-lg tracking-tight",
+                                    task.status === 'done' && "line-through text-slate-400 opacity-60"
                                 )}>
                                     {task.title}
                                 </h3>
-                                <div className="flex items-center gap-3 mt-1">
+                                <div className="flex items-center gap-4 mt-2">
                                     {task.projectId && (
-                                        <span className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider">Proyecto A</span>
+                                        <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest bg-indigo-50 px-2 py-0.5 rounded">Proyecto</span>
                                     )}
                                     {task.dueDate && (
-                                        <span className="text-[10px] font-medium text-slate-400">Vence: {task.dueDate}</span>
+                                        <span className="flex items-center gap-1.5 text-[11px] font-bold text-slate-400">
+                                            <Calendar className="h-3.5 w-3.5" />
+                                            Vence: {task.dueDate}
+                                        </span>
                                     )}
                                 </div>
                             </div>
-                            <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400">
-                                    <Calendar className="h-4 w-4" />
+
+                            <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
+                                <Button variant="ghost" size="icon" className="h-10 w-10 text-slate-400 hover:bg-slate-100 rounded-xl">
+                                    <MoreHorizontal className="h-5 w-5" />
                                 </Button>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400">
-                                    <MoreHorizontal className="h-4 w-4" />
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-10 w-10 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl"
+                                    onClick={() => deleteTask(task.id)}
+                                >
+                                    <Trash2 className="h-5 w-5" />
                                 </Button>
                             </div>
                         </div>
                     ))}
 
                     {filteredTasks?.length === 0 && (
-                        <div className="py-20 text-center">
-                            <p className="text-slate-400">Todo listo por aquí.</p>
+                        <div className="py-32 text-center bg-white rounded-3xl border-2 border-dashed border-slate-100">
+                            <div className="bg-slate-50 h-20 w-20 rounded-full flex items-center justify-center mx-auto mb-6">
+                                <Inbox className="h-10 w-10 text-slate-200" />
+                            </div>
+                            <h3 className="text-2xl font-black text-slate-300 tracking-tighter uppercase">Todo listo</h3>
+                            <p className="text-slate-400 font-medium mt-1">No hay tareas pendientes en esta categoría.</p>
                         </div>
                     )}
                 </div>
@@ -134,16 +193,21 @@ function TaskNavLink({ icon: Icon, label, active, onClick, color, count }: any) 
         <button
             onClick={onClick}
             className={cn(
-                "flex items-center justify-between px-3 py-2 rounded-lg transition-all text-sm font-medium",
-                active ? "bg-slate-200 text-slate-900" : "text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                "flex items-center justify-between px-4 py-3 rounded-xl transition-all text-sm font-bold tracking-tight",
+                active
+                    ? "bg-slate-900 text-white shadow-lg shadow-slate-200"
+                    : "text-slate-500 hover:bg-white hover:text-slate-900 border border-transparent hover:border-slate-100"
             )}
         >
-            <div className="flex items-center gap-3">
-                <Icon className={cn("h-4 w-4", color || "text-slate-400")} />
+            <div className="flex items-center gap-4">
+                <Icon className={cn("h-5 w-5", active ? "text-white" : (color || "text-slate-400"))} />
                 <span>{label}</span>
             </div>
             {count !== undefined && count > 0 && (
-                <span className="text-[10px] bg-slate-300 text-slate-700 px-1.5 py-0.5 rounded-full font-bold">
+                <span className={cn(
+                    "text-[10px] px-2 py-0.5 rounded-lg font-black",
+                    active ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"
+                )}>
                     {count}
                 </span>
             )}
