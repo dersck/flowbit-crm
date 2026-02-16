@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
 import { Search, Plus, Bell, User } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/features/auth/AuthContext';
 
-export default function Topbar() {
+interface TopbarProps {
+    onQuickAdd: () => void;
+}
+
+export default function Topbar({ onQuickAdd }: TopbarProps) {
     const { appUser } = useAuth();
 
     return (
@@ -20,7 +23,11 @@ export default function Topbar() {
             </div>
 
             <div className="flex items-center gap-4">
-                <Button size="sm" className="rounded-full px-5 h-10 bg-emerald-600 hover:bg-emerald-700 shadow-emerald-100 shadow-md flex gap-2">
+                <Button
+                    onClick={onQuickAdd}
+                    size="sm"
+                    className="rounded-full px-5 h-10 bg-emerald-600 hover:bg-emerald-700 shadow-emerald-100 shadow-md flex gap-2"
+                >
                     <Plus className="h-4 w-4" />
                     <span className="hidden sm:inline">Nuevo</span>
                 </Button>
