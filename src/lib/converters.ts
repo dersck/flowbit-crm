@@ -16,8 +16,16 @@ const toDate = (val: any) => {
 const genericConverter = <T extends { id: string }>(): FirestoreDataConverter<T> => ({
     toFirestore: (data: any) => {
         const { id, ...rest } = data;
+        // Filter out undefined values as Firestore doesn't support them
+        const cleanData = Object.keys(rest).reduce((acc: any, key) => {
+            if (rest[key] !== undefined) {
+                acc[key] = rest[key];
+            }
+            return acc;
+        }, {});
+
         return {
-            ...rest,
+            ...cleanData,
             updatedAt: serverTimestamp(),
         };
     },

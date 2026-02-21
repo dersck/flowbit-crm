@@ -30,7 +30,10 @@ export interface Client {
     id: string;
     workspaceId: string;
     name: string;
+    company?: string;
     stage: 'nuevo' | 'contactado' | 'negociacion' | 'ganado' | 'perdido';
+    source?: 'facebook' | 'instagram' | 'google' | 'referencia' | 'frio' | 'otro';
+    budget?: number;
     contact: {
         phone?: string;
         email?: string;
