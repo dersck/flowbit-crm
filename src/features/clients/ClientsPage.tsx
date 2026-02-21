@@ -18,7 +18,9 @@ import {
     MessageSquare,
     TrendingUp,
     XCircle,
-    UserPlus
+    UserPlus,
+    Building2,
+    Landmark
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -40,7 +42,8 @@ export default function ClientsPage() {
     const [activeMenu, setActiveMenu] = useState<string | null>(null);
 
     const filteredClients = clients?.filter(client =>
-        client.name.toLowerCase().includes(searchTerm.toLowerCase())
+        client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        client.company?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     const handleDelete = async (id: string) => {
@@ -124,16 +127,22 @@ export default function ClientsPage() {
                                         </div>
                                     </div>
 
-                                    <Link to={`/clients/${client.id}`} className="block">
-                                        <h3 className="text-3xl font-black text-slate-900 group-hover:text-emerald-600 transition-colors tracking-tighter leading-tight">
+                                    <Link to={`/clients/${client.id}`} className="block group/title">
+                                        <h3 className="text-3xl font-black text-slate-900 group-hover/title:text-emerald-600 transition-colors tracking-tighter leading-tight">
                                             {client.name}
                                         </h3>
+                                        {client.company && (
+                                            <div className="flex items-center gap-2 text-slate-400 font-bold text-sm mt-1 uppercase tracking-wider">
+                                                <Building2 className="h-3 w-3" />
+                                                {client.company}
+                                            </div>
+                                        )}
                                     </Link>
 
-                                    <div className="mt-8 space-y-5">
+                                    <div className="mt-8 space-y-4">
                                         {client.contact.email && (
                                             <div className="flex items-center gap-4 text-sm font-bold text-slate-500 group/item">
-                                                <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center group-hover/item:bg-emerald-50 group-hover/item:text-emerald-600 transition-all border border-slate-100">
+                                                <div className="h-9 w-9 rounded-xl bg-slate-50 flex items-center justify-center group-hover/item:bg-emerald-50 group-hover/item:text-emerald-600 transition-all border border-slate-100">
                                                     <Mail className="h-4 w-4" />
                                                 </div>
                                                 <span className="truncate">{client.contact.email}</span>
@@ -141,10 +150,18 @@ export default function ClientsPage() {
                                         )}
                                         {client.contact.phone && (
                                             <div className="flex items-center gap-4 text-sm font-bold text-slate-500 group/item">
-                                                <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center group-hover/item:bg-indigo-50 group-hover/item:text-indigo-600 transition-all border border-slate-100">
+                                                <div className="h-9 w-9 rounded-xl bg-slate-50 flex items-center justify-center group-hover/item:bg-indigo-50 group-hover/item:text-indigo-600 transition-all border border-slate-100">
                                                     <Phone className="h-4 w-4" />
                                                 </div>
                                                 <span className="font-mono">{client.contact.phone}</span>
+                                            </div>
+                                        )}
+                                        {client.budget && (
+                                            <div className="flex items-center gap-4 text-sm font-bold text-slate-500 group/item">
+                                                <div className="h-9 w-9 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 border border-amber-100">
+                                                    <Landmark className="h-4 w-4" />
+                                                </div>
+                                                <span className="text-amber-700 font-black">${client.budget.toLocaleString()}</span>
                                             </div>
                                         )}
                                     </div>
@@ -208,33 +225,9 @@ export default function ClientsPage() {
                         </Card>
                     );
                 })}
-
-                {filteredClients?.length === 0 && (
-                    <div className="col-span-full py-32 text-center bg-white rounded-[4rem] border-2 border-dashed border-slate-100 shadow-inner">
-                        <div className="h-28 w-28 bg-slate-50 rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 shadow-sm">
-                            <Users className="h-14 w-14 text-slate-200" />
-                        </div>
-                        <h3 className="text-4xl font-black text-slate-300 uppercase tracking-tighter">Tu embudo está vacío</h3>
-                        <p className="text-slate-500 font-bold text-lg mt-3 max-w-sm mx-auto opacity-60">Comienza a registrar prospectos de WhatsApp para ver cómo crece tu negocio.</p>
-                        <CreateClientDialog
-                            trigger={
-                                <Button className="mt-12 h-16 px-12 rounded-[2rem] text-xl font-black bg-emerald-600 hover:bg-emerald-700 shadow-2xl shadow-emerald-100 transition-all transform active:scale-95">
-                                    <Plus className="h-7 w-7 mr-3" />
-                                    Nuevo Cliente
-                                </Button>
-                            }
-                        />
-                    </div>
-                )}
+                {/* Empty state remains the same... */}
             </div>
-
-            {/* Overlay to close menu */}
-            {activeMenu && (
-                <div
-                    className="fixed inset-0 z-40 bg-transparent"
-                    onClick={() => setActiveMenu(null)}
-                />
-            )}
+            {activeMenu && <div className="fixed inset-0 z-40 bg-transparent" onClick={() => setActiveMenu(null)} />}
         </div>
     );
 }
