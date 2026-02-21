@@ -6,18 +6,19 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import {
     Search,
-    Plus,
     Filter,
     ExternalLink,
     Phone,
     Mail,
     Users,
     Trash2,
-    MoreVertical
+    MoreVertical,
+    Plus
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import CreateClientDialog from './CreateClientDialog';
 
 export default function ClientsPage() {
     const { data: clients, isLoading } = useWorkspaceQuery<Client>('clients', 'all-clients');
@@ -51,10 +52,7 @@ export default function ClientsPage() {
                     <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Clientes</h1>
                     <p className="text-slate-500 font-medium mt-1">Directorio unificado de tu workspace.</p>
                 </div>
-                <Button className="h-12 px-8 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white shadow-xl shadow-slate-200 font-bold flex gap-3">
-                    <Plus className="h-5 w-5" />
-                    Añadir Cliente
-                </Button>
+                <CreateClientDialog />
             </div>
 
             <div className="flex flex-col md:flex-row items-center gap-4">
@@ -149,10 +147,14 @@ export default function ClientsPage() {
                         </div>
                         <h3 className="text-3xl font-black text-slate-300 uppercase tracking-tighter">Sin Clientes</h3>
                         <p className="text-slate-400 font-medium mt-2 max-w-sm mx-auto">Tu directorio está vacío. Comienza a registrar prospectos para hacer crecer tu negocio.</p>
-                        <Button className="mt-10 h-14 px-10 rounded-2xl text-lg font-black bg-emerald-600 shadow-2xl shadow-emerald-100">
-                            <Plus className="h-6 w-6 mr-3" />
-                            Nuevo Cliente
-                        </Button>
+                        <CreateClientDialog
+                            trigger={
+                                <Button className="mt-10 h-14 px-10 rounded-2xl text-lg font-black bg-emerald-600 shadow-2xl shadow-emerald-100">
+                                    <Plus className="h-6 w-6 mr-3" />
+                                    Nuevo Cliente
+                                </Button>
+                            }
+                        />
                     </div>
                 )}
             </div>
