@@ -14,7 +14,7 @@ import SettingsPage from '@/features/settings/SettingsPage';
 import MainLayout from '@/components/layout/MainLayout';
 import { Toaster } from 'sonner';
 
-function App() {
+export default function App() {
   return (
     <AuthProvider>
       <Routes>
@@ -47,7 +47,6 @@ function App() {
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Route>
 
-
         {/* Catch-all */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
@@ -55,5 +54,3 @@ function App() {
     </AuthProvider>
   );
 }
-
-export default App;
