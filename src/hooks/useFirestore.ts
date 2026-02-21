@@ -9,9 +9,6 @@ import {
     addDoc,
     updateDoc,
     deleteDoc,
-    orderBy,
-    limit,
-    Timestamp,
     serverTimestamp
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -44,7 +41,34 @@ export function useWorkspaceQuery<T extends { id: string }>(
     });
 }
 
-export function useWorkspaceMutation<T extends { id: string }>(
+export function useEntityQuery<T extends { id: string }>(
+    collectionName: keyof typeof converters,
+    id: string | undefined
+) {
+    const { appUser } = useAuth();
+    const workspaceId = appUser?.defaultWorkspaceId;
+
+    return useQuery({
+        queryKey: [collectionName, workspaceId, id],
+        queryFn: async () => {
+            if (!workspaceId || !id) return null;
+
+            const ref = doc(db, collectionName, id).withConverter((converters as any)[collectionName]);
+            const snapshot = await getDoc(ref);
+
+            if (!snapshot.exists()) return null;
+
+            const data = snapshot.data() as T;
+            // Verify ownership
+            if ((data as any).workspaceId !== workspaceId) return null;
+
+            return data;
+        },
+        enabled: !!workspaceId && !!id,
+    });
+}
+
+export function useWorkspaceMutation(
     collectionName: keyof typeof converters
 ) {
     const queryClient = useQueryClient();

@@ -9,8 +9,10 @@ import {
     Calendar,
     CheckCircle2,
     MoreHorizontal,
-    Trash2
+    Trash2,
+    Clock
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { isToday, isPast } from 'date-fns';
 import { toast } from 'sonner';
@@ -138,20 +140,35 @@ export default function TasksPage() {
 
                             <div className="flex-1 min-w-0">
                                 <h3 className={cn(
-                                    "font-bold text-slate-900 transition-all text-lg tracking-tight",
+                                    "font-bold text-slate-900 transition-all text-xl tracking-tighter",
                                     task.status === 'done' && "line-through text-slate-400 opacity-60"
                                 )}>
                                     {task.title}
                                 </h3>
-                                <div className="flex items-center gap-4 mt-2">
-                                    {task.projectId && (
-                                        <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest bg-indigo-50 px-2 py-0.5 rounded">Proyecto</span>
+                                <div className="flex items-center gap-4 mt-2.5">
+                                    {task.projectId ? (
+                                        <Link
+                                            to={`/projects/${task.projectId}`}
+                                            className="text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-100 hover:bg-indigo-600 hover:text-white transition-all"
+                                        >
+                                            Proyecto
+                                        </Link>
+                                    ) : task.clientId && (
+                                        <Link
+                                            to={`/clients/${task.clientId}`}
+                                            className="text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100 hover:bg-emerald-600 hover:text-white transition-all"
+                                        >
+                                            Cliente
+                                        </Link>
                                     )}
-                                    {task.dueDate && (
+                                    {task.scheduledDate && (
                                         <span className="flex items-center gap-1.5 text-[11px] font-bold text-slate-400">
-                                            <Calendar className="h-3.5 w-3.5" />
-                                            Vence: {task.dueDate}
+                                            <Clock className="h-3.5 w-3.5" />
+                                            {task.scheduledDate}
                                         </span>
+                                    )}
+                                    {task.priority === 3 && (
+                                        <span className="h-2 w-2 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.4)] animate-pulse" />
                                     )}
                                 </div>
                             </div>

@@ -6,8 +6,11 @@ import RegisterPage from '@/features/auth/RegisterPage';
 import OnboardingPage from '@/features/onboarding/OnboardingPage';
 import DashboardPage from '@/features/dashboard/DashboardPage';
 import ClientsPage from '@/features/clients/ClientsPage';
+import ClientDetailPage from '@/features/clients/ClientDetailPage';
 import ProjectsPage from '@/features/projects/ProjectsPage';
+import ProjectDetailPage from '@/features/projects/ProjectDetailPage';
 import TasksPage from '@/features/tasks/TasksPage';
+import SettingsPage from '@/features/settings/SettingsPage';
 import MainLayout from '@/components/layout/MainLayout';
 import { Toaster } from 'sonner';
 
@@ -32,14 +35,14 @@ function App() {
           <Route element={<MainLayout />}>
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/clients" element={<ClientsPage />} />
-            <Route path="/clients/:id" element={<div>Client Detail</div>} />
+            <Route path="/clients/:id" element={<ClientDetailPage />} />
 
             <Route path="/projects" element={<ProjectsPage />} />
-            <Route path="/projects/:id" element={<div>Project Detail</div>} />
+            <Route path="/projects/:id" element={<ProjectDetailPage />} />
 
             <Route path="/tasks" element={<TasksPage />} />
 
-            <Route path="/settings" element={<div>Settings</div>} />
+            <Route path="/settings" element={<SettingsPage />} />
           </Route>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Route>
