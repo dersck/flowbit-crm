@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useWorkspaceQuery, useWorkspaceMutation } from '@/hooks/useFirestore';
 import type { Project } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,7 @@ import {
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 
 const statuses = [
     { id: 'active', label: 'En Curso', color: 'text-emerald-500', bg: 'bg-emerald-500' },
@@ -21,15 +23,17 @@ const statuses = [
 export default function ProjectsPage() {
     const { data: projects, isLoading } = useWorkspaceQuery<Project>('projects', 'all-projects');
     const { deleteMutation } = useWorkspaceMutation('projects');
+    const [deleteId, setDeleteId] = useState<string | null>(null);
 
     const getProjectsByStatus = (status: string) =>
         projects?.filter(p => p.status === status) || [];
 
-    const handleDelete = async (id: string) => {
-        if (!confirm('¿Eliminar proyecto definitivamente?')) return;
+    const handleDelete = async () => {
+        if (!deleteId) return;
         try {
-            await deleteMutation.mutateAsync(id);
+            await deleteMutation.mutateAsync(deleteId);
             toast.success('Proyecto eliminado');
+            setDeleteId(null);
         } catch (e) {
             toast.error('Error al eliminar');
         }
@@ -84,7 +88,7 @@ export default function ProjectsPage() {
                                                     variant="ghost"
                                                     size="icon"
                                                     className="h-8 w-8 text-slate-300 hover:text-rose-500 rounded-lg"
-                                                    onClick={() => handleDelete(project.id)}
+                                                    onClick={() => setDeleteId(project.id)}
                                                 >
                                                     <Trash2 className="h-4 w-4" />
                                                 </Button>
@@ -144,6 +148,18 @@ export default function ProjectsPage() {
                     </div>
                 ))}
             </div>
+
+            <ConfirmDialog
+                isOpen={!!deleteId}
+                onClose={() => setDeleteId(null)}
+                onConfirm={handleDelete}
+                title="¿Eliminar proyecto?"
+                description="Se borrarán también todas las tareas asociadas a este proyecto. Esta acción es irreversible."
+                confirmText="Eliminar proyecto"
+                cancelText="Mantener"
+                variant="danger"
+                isLoading={deleteMutation.isPending}
+            />
         </div>
     );
 }
