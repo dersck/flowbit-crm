@@ -11,10 +11,10 @@ import {
     Calendar,
     Briefcase,
     CheckCircle2,
-    MessageSquare,
-    Video,
     Plus,
-    Clock
+    Clock,
+    MessageSquare,
+    Video
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -86,9 +86,12 @@ export default function ClientDetailPage() {
                                 </div>
                                 <div>
                                     <div className={cn(
-                                        "px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest mb-2 inline-block",
-                                        client.stage === 'activo' ? "bg-emerald-100 text-emerald-700" :
-                                            client.stage === 'prospecto' ? "bg-indigo-100 text-indigo-700" : "bg-slate-100 text-slate-600"
+                                        "px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest mb-2 inline-block border",
+                                        client.stage === 'nuevo' ? "bg-blue-100 text-blue-700 border-blue-200" :
+                                            client.stage === 'contactado' ? "bg-emerald-100 text-emerald-700 border-emerald-200" :
+                                                client.stage === 'negociacion' ? "bg-amber-100 text-amber-700 border-amber-200" :
+                                                    client.stage === 'ganado' ? "bg-slate-900 text-white border-slate-900 shadow-lg" :
+                                                        client.stage === 'perdido' ? "bg-rose-100 text-rose-700 border-rose-200" : "bg-slate-100 text-slate-600"
                                     )}>
                                         {client.stage}
                                     </div>
@@ -117,7 +120,7 @@ export default function ClientDetailPage() {
                                     <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center border border-slate-100 group-hover:bg-amber-50 group-hover:text-amber-600 transition-colors">
                                         <Calendar className="h-5 w-5" />
                                     </div>
-                                    Registrado el {format(client.createdAt, 'dd MMMM, yyyy', { locale: es })}
+                                    Registrado el {client.createdAt instanceof Date ? format(client.createdAt, 'dd MMMM, yyyy', { locale: es }) : 'Reciente'}
                                 </div>
                             </div>
                         </div>
@@ -182,7 +185,7 @@ export default function ClientDetailPage() {
                                         <CardContent className="p-6">
                                             <div className="flex justify-between items-start mb-2">
                                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                                                    {format(activity.date, 'eeee, dd MMMM', { locale: es })}
+                                                    {activity.date instanceof Date ? format(activity.date, 'eeee, dd MMMM', { locale: es }) : 'Reciente'}
                                                 </p>
                                                 <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-300">
                                                     <MoreHorizontal className="h-4 w-4" />

@@ -19,6 +19,14 @@ interface CreateClientDialogProps {
     trigger?: React.ReactNode;
 }
 
+const STAGES = [
+    { id: 'nuevo', label: 'Nuevo' },
+    { id: 'contactado', label: 'Contactado' },
+    { id: 'negociacion', label: 'Negociación' },
+    { id: 'ganado', label: 'Ganado' },
+    { id: 'perdido', label: 'Perdido' },
+] as const;
+
 export default function CreateClientDialog({ trigger }: CreateClientDialogProps) {
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -28,7 +36,7 @@ export default function CreateClientDialog({ trigger }: CreateClientDialogProps)
         name: '',
         email: '',
         phone: '',
-        stage: 'prospecto' as 'prospecto' | 'activo',
+        stage: 'nuevo' as typeof STAGES[number]['id'],
     });
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -48,7 +56,7 @@ export default function CreateClientDialog({ trigger }: CreateClientDialogProps)
             });
             toast.success('Cliente creado correctamente');
             setOpen(false);
-            setFormData({ name: '', email: '', phone: '', stage: 'prospecto' });
+            setFormData({ name: '', email: '', phone: '', stage: 'nuevo' });
         } catch (error) {
             console.error(error);
             toast.error('Error al crear el cliente');
@@ -126,20 +134,20 @@ export default function CreateClientDialog({ trigger }: CreateClientDialogProps)
 
                         <div className="space-y-2">
                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Etapa Inicial</label>
-                            <div className="flex gap-2">
-                                {(['prospecto', 'activo'] as const).map((stage) => (
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                {STAGES.map((stage) => (
                                     <button
-                                        key={stage}
+                                        key={stage.id}
                                         type="button"
-                                        onClick={() => setFormData({ ...formData, stage })}
+                                        onClick={() => setFormData({ ...formData, stage: stage.id })}
                                         className={cn(
-                                            "flex-1 h-11 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all",
-                                            formData.stage === stage
+                                            "h-11 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all",
+                                            formData.stage === stage.id
                                                 ? "bg-slate-900 text-white border-slate-900 shadow-lg"
                                                 : "bg-white text-slate-400 border-slate-200 hover:border-slate-400"
                                         )}
                                     >
-                                        {stage}
+                                        {stage.label}
                                     </button>
                                 ))}
                             </div>

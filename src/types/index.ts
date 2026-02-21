@@ -30,7 +30,7 @@ export interface Client {
     id: string;
     workspaceId: string;
     name: string;
-    stage: 'prospecto' | 'activo' | 'inactivo';
+    stage: 'nuevo' | 'contactado' | 'negociacion' | 'ganado' | 'perdido';
     contact: {
         phone?: string;
         email?: string;
