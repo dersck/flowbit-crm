@@ -57,13 +57,13 @@ export default function ClientsPage() {
     };
 
     const handleUpdateStage = async (id: string, stage: Client['stage']) => {
+        setActiveMenu(null); // Close immediately for snappier feel
         try {
             await updateMutation.mutateAsync({
                 id,
                 data: { stage, updatedAt: new Date() }
             });
             toast.success(`Etapa actualizada a ${STAGE_CONFIG[stage].label}`);
-            setActiveMenu(null);
         } catch (e) {
             toast.error('Error al actualizar etapa');
         }
@@ -111,7 +111,13 @@ export default function ClientsPage() {
                     const Icon = config.icon;
 
                     return (
-                        <Card key={client.id} className="group relative hover:shadow-[0_20px_50px_rgba(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-500 border-none bg-white rounded-[2.5rem] overflow-visible shadow-xl shadow-slate-200/40">
+                        <Card
+                            key={client.id}
+                            className={cn(
+                                "group relative hover:shadow-[0_20px_50px_rgba(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-500 border-none bg-white rounded-[2.5rem] overflow-visible shadow-xl shadow-slate-200/40",
+                                activeMenu === client.id && "z-50 shadow-2xl" // Elevate active card above overlay
+                            )}
+                        >
                             <CardContent className="p-0">
                                 <div className="p-10">
                                     <div className="flex items-start justify-between mb-8">
@@ -186,7 +192,10 @@ export default function ClientsPage() {
                                                     "h-12 w-12 text-slate-300 hover:text-slate-900 hover:bg-slate-100 rounded-2xl transition-all",
                                                     activeMenu === client.id && "bg-slate-100 text-slate-900"
                                                 )}
-                                                onClick={() => setActiveMenu(activeMenu === client.id ? null : client.id)}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setActiveMenu(activeMenu === client.id ? null : client.id);
+                                                }}
                                             >
                                                 <MoreVertical className="h-5 w-5" />
                                             </Button>
@@ -199,7 +208,11 @@ export default function ClientsPage() {
                                                         {(Object.entries(STAGE_CONFIG) as [Client['stage'], any][]).map(([key, cfg]) => (
                                                             <button
                                                                 key={key}
-                                                                onClick={() => handleUpdateStage(client.id, key)}
+                                                                type="button"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleUpdateStage(client.id, key);
+                                                                }}
                                                                 className={cn(
                                                                     "w-full flex items-center gap-3 p-3 rounded-2xl text-[11px] font-bold transition-all hover:bg-slate-50 text-left",
                                                                     client.stage === key ? "text-slate-900 bg-slate-50/50" : "text-slate-500"
