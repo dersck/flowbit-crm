@@ -16,6 +16,7 @@ import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { isToday, isPast } from 'date-fns';
 import { toast } from 'sonner';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 
 type TaskFilter = 'inbox' | 'today' | 'upcoming' | 'done';
 
@@ -23,6 +24,7 @@ export default function TasksPage() {
     const [filter, setFilter] = useState<TaskFilter>('today');
     const { data: tasks, isLoading } = useWorkspaceQuery<Task>('tasks', 'all-tasks');
     const { updateMutation, deleteMutation } = useWorkspaceMutation('tasks');
+    const [deleteId, setDeleteId] = useState<string | null>(null);
 
     const filteredTasks = tasks?.filter(task => {
         switch (filter) {
@@ -55,11 +57,12 @@ export default function TasksPage() {
         }
     };
 
-    const deleteTask = async (id: string) => {
-        if (!confirm('¿Estás seguro de eliminar esta tarea?')) return;
+    const deleteTask = async () => {
+        if (!deleteId) return;
         try {
-            await deleteMutation.mutateAsync(id);
+            await deleteMutation.mutateAsync(deleteId);
             toast.success('Tarea eliminada');
+            setDeleteId(null);
         } catch (e) {
             toast.error('Error al eliminar');
         }
@@ -181,7 +184,7 @@ export default function TasksPage() {
                                     variant="ghost"
                                     size="icon"
                                     className="h-10 w-10 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl"
-                                    onClick={() => deleteTask(task.id)}
+                                    onClick={() => setDeleteId(task.id)}
                                 >
                                     <Trash2 className="h-5 w-5" />
                                 </Button>
@@ -200,6 +203,18 @@ export default function TasksPage() {
                     )}
                 </div>
             </div>
+
+            <ConfirmDialog
+                isOpen={!!deleteId}
+                onClose={() => setDeleteId(null)}
+                onConfirm={deleteTask}
+                title="¿Eliminar tarea?"
+                description="Esta acción quitará la tarea de tu lista permanentemente."
+                confirmText="Eliminar tarea"
+                cancelText="Mantener"
+                variant="danger"
+                isLoading={deleteMutation.isPending}
+            />
         </div>
     );
 }

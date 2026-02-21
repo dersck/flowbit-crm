@@ -10,10 +10,8 @@ import {
     ExternalLink,
     Phone,
     Mail,
-    Users,
     Trash2,
     MoreVertical,
-    Plus,
     CheckCircle2,
     MessageSquare,
     TrendingUp,
@@ -26,6 +24,7 @@ import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import CreateClientDialog from './CreateClientDialog';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 
 const STAGE_CONFIG = {
     nuevo: { label: 'Nuevo Lead', color: 'bg-blue-100 text-blue-700 border-blue-200', icon: UserPlus },
@@ -40,17 +39,19 @@ export default function ClientsPage() {
     const { deleteMutation, updateMutation } = useWorkspaceMutation('clients');
     const [searchTerm, setSearchTerm] = useState('');
     const [activeMenu, setActiveMenu] = useState<string | null>(null);
+    const [deleteId, setDeleteId] = useState<string | null>(null);
 
     const filteredClients = clients?.filter(client =>
         client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         client.company?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    const handleDelete = async (id: string) => {
-        if (!confirm('¿Eliminar cliente? Se perderá toda su información.')) return;
+    const handleDelete = async () => {
+        if (!deleteId) return;
         try {
-            await deleteMutation.mutateAsync(id);
+            await deleteMutation.mutateAsync(deleteId);
             toast.success('Cliente eliminado');
+            setDeleteId(null);
         } catch (e) {
             toast.error('Error al eliminar');
         }
@@ -179,7 +180,10 @@ export default function ClientsPage() {
                                             variant="ghost"
                                             size="icon"
                                             className="h-12 w-12 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-2xl transition-all"
-                                            onClick={() => handleDelete(client.id)}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setDeleteId(client.id);
+                                            }}
                                         >
                                             <Trash2 className="h-5 w-5" />
                                         </Button>
@@ -241,6 +245,18 @@ export default function ClientsPage() {
                 {/* Empty state remains the same... */}
             </div>
             {activeMenu && <div className="fixed inset-0 z-40 bg-transparent" onClick={() => setActiveMenu(null)} />}
+
+            <ConfirmDialog
+                isOpen={!!deleteId}
+                onClose={() => setDeleteId(null)}
+                onConfirm={handleDelete}
+                title="¿Eliminar cliente?"
+                description="Esta acción no se puede deshacer. Se perderá toda la información del contacto y sus proyectos asociados."
+                confirmText="Eliminar permanentemente"
+                cancelText="Mantener cliente"
+                variant="danger"
+                isLoading={deleteMutation.isPending}
+            />
         </div>
     );
 }
