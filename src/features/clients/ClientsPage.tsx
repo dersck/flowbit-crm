@@ -74,7 +74,11 @@ export default function ClientsPage() {
     const filteredClients = clients?.filter(client =>
         client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         client.company?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    ).sort((a, b) => {
+        const dateA = a.updatedAt?.getTime() || a.createdAt?.getTime() || 0;
+        const dateB = b.updatedAt?.getTime() || b.createdAt?.getTime() || 0;
+        return dateB - dateA;
+    });
 
     const handleDelete = async () => {
         if (!deleteId) return;
@@ -145,12 +149,12 @@ export default function ClientsPage() {
                         <Card
                             key={client.id}
                             className={cn(
-                                "group relative hover:shadow-[0_20px_50px_rgba(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-500 border-none bg-white rounded-[2.5rem] overflow-visible shadow-xl shadow-slate-200/40",
-                                activeMenu === client.id && "z-50 shadow-2xl" // Elevate active card above overlay
+                                "group relative hover:shadow-[0_20px_50px_rgba(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-500 border-none bg-white rounded-[3rem] overflow-visible shadow-xl shadow-slate-200/40 flex flex-col h-[520px]",
+                                activeMenu === client.id && "z-50 shadow-2xl"
                             )}
                         >
-                            <CardContent className="p-0">
-                                <div className="p-10">
+                            <CardContent className="p-0 flex flex-col h-full">
+                                <div className="p-8 flex-1">
                                     <div className="flex items-start justify-between mb-8">
                                         <div className="h-20 w-20 bg-slate-50 rounded-3xl flex items-center justify-center text-slate-400 font-black text-4xl group-hover:bg-slate-900 group-hover:text-white transition-all duration-500 transform group-hover:rotate-6 border border-slate-100 shadow-inner">
                                             {client.name.charAt(0)}
@@ -184,123 +188,128 @@ export default function ClientsPage() {
                                         </div>
                                     </div>
 
-                                    <Link to={`/clients/${client.id}`} className="block group/title">
-                                        <h3 className="text-3xl font-black text-slate-900 group-hover/title:text-emerald-600 transition-colors tracking-tighter leading-tight">
+                                    <Link to={`/clients/${client.id}`} className="block group/title h-14">
+                                        <h3 className="text-3xl font-black text-slate-900 group-hover/title:text-emerald-600 transition-colors tracking-tighter leading-tight truncate">
                                             {client.name}
                                         </h3>
-                                        {client.company && (
-                                            <div className="flex items-center gap-2 text-slate-400 font-bold text-sm mt-1 uppercase tracking-wider">
+                                        {client.company ? (
+                                            <div className="flex items-center gap-2 text-slate-400 font-bold text-sm mt-1 uppercase tracking-wider truncate">
                                                 <Building2 className="h-3 w-3" />
                                                 {client.company}
                                             </div>
+                                        ) : (
+                                            <div className="h-6" /> // Spacer to maintain height
                                         )}
                                     </Link>
 
-                                    <div className="mt-8 space-y-4">
-                                        {client.contact.email && (
+                                    <div className="mt-6 space-y-3 h-32">
+                                        {client.contact.email ? (
                                             <div className="flex items-center gap-4 text-sm font-bold text-slate-500 group/item">
                                                 <div className="h-9 w-9 rounded-xl bg-slate-50 flex items-center justify-center group-hover/item:bg-emerald-50 group-hover/item:text-emerald-600 transition-all border border-slate-100">
                                                     <Mail className="h-4 w-4" />
                                                 </div>
                                                 <span className="truncate">{client.contact.email}</span>
                                             </div>
+                                        ) : (
+                                            <div className="h-9" /> // Placeholder
                                         )}
-                                        {client.contact.phone && (
+                                        {client.contact.phone ? (
                                             <div className="flex items-center gap-4 text-sm font-bold text-slate-500 group/item">
                                                 <div className="h-9 w-9 rounded-xl bg-slate-50 flex items-center justify-center group-hover/item:bg-indigo-50 group-hover/item:text-indigo-600 transition-all border border-slate-100">
                                                     <Phone className="h-4 w-4" />
                                                 </div>
                                                 <span className="font-mono">{client.contact.phone}</span>
                                             </div>
+                                        ) : (
+                                            <div className="h-9" /> // Placeholder
                                         )}
-                                        {client.budget && (
+                                        {client.budget ? (
                                             <div className="flex items-center gap-4 text-sm font-bold text-slate-500 group/item">
                                                 <div className="h-9 w-9 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 border border-amber-100">
                                                     <Landmark className="h-4 w-4" />
                                                 </div>
                                                 <span className="text-amber-700 font-black">${client.budget.toLocaleString()}</span>
                                             </div>
+                                        ) : (
+                                            <div className="h-9" /> // Placeholder
                                         )}
                                     </div>
                                 </div>
 
-                                <div className="bg-slate-50/50 px-8 py-6 border-t border-slate-50 flex items-center justify-between group-hover:bg-white transition-colors duration-300 rounded-b-[2.5rem]">
-                                    <div className="flex gap-2">
+                                <div className="bg-slate-50/50 px-4 py-5 border-t border-slate-50 flex items-center justify-center gap-2 group-hover:bg-white transition-colors duration-300 rounded-b-[3rem] mt-auto">
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-12 w-12 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-2xl transition-all flex-shrink-0"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setDeleteId(client.id);
+                                        }}
+                                    >
+                                        <Trash2 className="h-5 w-5" />
+                                    </Button>
+
+                                    <div className="relative">
                                         <Button
                                             variant="ghost"
                                             size="icon"
-                                            className="h-12 w-12 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-2xl transition-all"
+                                            className={cn(
+                                                "h-12 w-12 text-slate-300 hover:text-slate-900 hover:bg-slate-100 rounded-2xl transition-all",
+                                                activeMenu === client.id && "bg-slate-100 text-slate-900"
+                                            )}
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                setDeleteId(client.id);
+                                                setActiveMenu(activeMenu === client.id ? null : client.id);
                                             }}
                                         >
-                                            <Trash2 className="h-5 w-5" />
+                                            <MoreVertical className="h-5 w-5" />
                                         </Button>
 
-                                        <div className="relative">
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className={cn(
-                                                    "h-12 w-12 text-slate-300 hover:text-slate-900 hover:bg-slate-100 rounded-2xl transition-all",
-                                                    activeMenu === client.id && "bg-slate-100 text-slate-900"
-                                                )}
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setActiveMenu(activeMenu === client.id ? null : client.id);
-                                                }}
-                                            >
-                                                <MoreVertical className="h-5 w-5" />
-                                            </Button>
-
-                                            {/* Quick Actions Menu */}
-                                            {activeMenu === client.id && (
-                                                <div className="absolute bottom-full left-0 mb-3 w-64 bg-white rounded-3xl shadow-2xl border border-slate-100 p-3 z-50 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest p-3 pb-2">Mover a etapa</p>
-                                                    <div className="space-y-1">
-                                                        {(Object.entries(STAGE_CONFIG) as [Client['stage'], any][]).map(([key, cfg]) => (
-                                                            <button
-                                                                key={key}
-                                                                type="button"
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    handleUpdateStage(client.id, key);
-                                                                }}
-                                                                className={cn(
-                                                                    "w-full flex items-center gap-3 p-3 rounded-2xl text-[11px] font-bold transition-all hover:bg-slate-50 text-left",
-                                                                    client.stage === key ? "text-slate-900 bg-slate-50/50" : "text-slate-500"
-                                                                )}
-                                                            >
-                                                                <cfg.icon className={cn("h-4 w-4", client.stage === key ? "text-slate-900" : "text-slate-400")} />
-                                                                {cfg.label}
-                                                            </button>
-                                                        ))}
-                                                    </div>
+                                        {/* Quick Actions Menu */}
+                                        {activeMenu === client.id && (
+                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 w-64 bg-white rounded-3xl shadow-2xl border border-slate-100 p-3 z-50 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest p-3 pb-2 text-center">Mover a etapa</p>
+                                                <div className="space-y-1">
+                                                    {(Object.entries(STAGE_CONFIG) as [Client['stage'], any][]).map(([key, cfg]) => (
+                                                        <button
+                                                            key={key}
+                                                            type="button"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleUpdateStage(client.id, key);
+                                                            }}
+                                                            className={cn(
+                                                                "w-full flex items-center gap-3 p-3 rounded-2xl text-[11px] font-bold transition-all hover:bg-slate-50 text-left",
+                                                                client.stage === key ? "text-slate-900 bg-slate-50/50" : "text-slate-500"
+                                                            )}
+                                                        >
+                                                            <cfg.icon className={cn("h-4 w-4", client.stage === key ? "text-slate-900" : "text-slate-400")} />
+                                                            {cfg.label}
+                                                        </button>
+                                                    ))}
                                                 </div>
-                                            )}
-                                        </div>
+                                            </div>
+                                        )}
                                     </div>
 
-                                    <div className="flex gap-2">
-                                        {client.contact.phone && (
-                                            <a
-                                                href={`https://wa.me/${client.contact.phone.replace(/[^0-9]/g, '')}`}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="h-12 px-5 rounded-2xl bg-emerald-500 text-white font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-emerald-600 hover:shadow-lg shadow-emerald-200 transition-all transform active:scale-95"
-                                            >
-                                                <WhatsAppIcon className="h-4 w-4" />
-                                                WhatsApp
-                                            </a>
-                                        )}
-                                        <Link
-                                            to={`/clients/${client.id}`}
-                                            className="h-12 w-12 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-emerald-600 hover:border-emerald-100 hover:shadow-xl transition-all transform active:scale-95"
+                                    {client.contact.phone && (
+                                        <a
+                                            href={`https://wa.me/${client.contact.phone.replace(/[^0-9]/g, '')}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="h-12 px-4 rounded-2xl bg-emerald-500 text-white font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-emerald-600 hover:shadow-lg shadow-emerald-200 transition-all transform active:scale-95 flex-shrink-0"
                                         >
-                                            <ExternalLink className="h-5 w-5" />
-                                        </Link>
-                                    </div>
+                                            <WhatsAppIcon className="h-4 w-4" />
+
+                                        </a>
+                                    )}
+
+                                    <Link
+                                        to={`/clients/${client.id}`}
+                                        className="h-12 w-12 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-emerald-600 hover:border-emerald-100 hover:shadow-xl transition-all transform active:scale-95 flex-shrink-0"
+                                    >
+                                        <ExternalLink className="h-5 w-5" />
+                                    </Link>
                                 </div>
                             </CardContent>
                         </Card>
