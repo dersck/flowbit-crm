@@ -24,7 +24,8 @@ import {
     Globe,
     Users,
     Zap,
-    Clock
+    Clock,
+    MessageSquareOff
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -92,7 +93,7 @@ export default function ClientsPage() {
     };
 
     const handleUpdateStage = async (id: string, stage: Client['stage']) => {
-        setActiveMenu(null); // Close immediately for snappier feel
+        setActiveMenu(null);
         try {
             await updateMutation.mutateAsync({
                 id,
@@ -101,6 +102,23 @@ export default function ClientsPage() {
             toast.success(`Etapa actualizada a ${STAGE_CONFIG[stage].label}`);
         } catch (e) {
             toast.error('Error al actualizar etapa');
+        }
+    };
+
+    const handleToggleWhatsApp = async (client: Client) => {
+        setActiveMenu(null);
+        const newState = !client.contact.noWhatsApp;
+        try {
+            await updateMutation.mutateAsync({
+                id: client.id,
+                data: {
+                    contact: { ...client.contact, noWhatsApp: newState },
+                    updatedAt: new Date()
+                }
+            });
+            toast.success(newState ? 'Marcado como sin WhatsApp' : 'WhatsApp habilitado');
+        } catch (e) {
+            toast.error('Error al actualizar estado');
         }
     };
 
@@ -214,14 +232,18 @@ export default function ClientsPage() {
                                             <div className="h-9" /> // Placeholder
                                         )}
                                         {client.contact.phone ? (
-                                            <div className="flex items-center gap-4 text-sm font-bold text-slate-500 group/item">
+                                            <a
+                                                href={`tel:${client.contact.phone}`}
+                                                className="flex items-center gap-4 text-sm font-bold text-slate-500 group/item hover:text-indigo-600 transition-colors"
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
                                                 <div className="h-9 w-9 rounded-xl bg-slate-50 flex items-center justify-center group-hover/item:bg-indigo-50 group-hover/item:text-indigo-600 transition-all border border-slate-100">
                                                     <Phone className="h-4 w-4" />
                                                 </div>
                                                 <span className="font-mono">{client.contact.phone}</span>
-                                            </div>
+                                            </a>
                                         ) : (
-                                            <div className="h-9" /> // Placeholder
+                                            <div className="h-9" />
                                         )}
                                         {client.budget ? (
                                             <div className="flex items-center gap-4 text-sm font-bold text-slate-500 group/item">
@@ -288,28 +310,54 @@ export default function ClientsPage() {
                                                         </button>
                                                     ))}
                                                 </div>
+                                                <div className="pt-2 mt-2 border-t border-slate-100">
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleToggleWhatsApp(client);
+                                                        }}
+                                                        className={cn(
+                                                            "w-full flex items-center gap-3 p-3 rounded-2xl text-[11px] font-bold transition-all text-left",
+                                                            client.contact.noWhatsApp ? "text-emerald-600 hover:bg-emerald-50" : "text-amber-600 hover:bg-amber-50"
+                                                        )}
+                                                    >
+                                                        {client.contact.noWhatsApp ? (
+                                                            <MessageSquare className="h-4 w-4" />
+                                                        ) : (
+                                                            <MessageSquareOff className="h-4 w-4" />
+                                                        )}
+                                                        {client.contact.noWhatsApp ? 'Tiene WhatsApp' : 'No tiene WhatsApp'}
+                                                    </button>
+                                                </div>
                                             </div>
                                         )}
                                     </div>
 
-                                    {client.contact.phone && (
-                                        <a
-                                            href={`https://wa.me/${client.contact.phone.replace(/[^0-9]/g, '')}`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="h-12 px-4 rounded-2xl bg-emerald-500 text-white font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-emerald-600 hover:shadow-lg shadow-emerald-200 transition-all transform active:scale-95 flex-shrink-0"
+                                    <div className="flex gap-2">
+                                        {client.contact.phone && (
+                                            client.contact.noWhatsApp ? (
+                                                <div className="h-12 w-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 cursor-not-allowed opacity-60" title="Este número no tiene WhatsApp">
+                                                    <MessageSquareOff className="h-5 w-5" />
+                                                </div>
+                                            ) : (
+                                                <a
+                                                    href={`https://wa.me/${client.contact.phone.replace(/[^0-9]/g, '')}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="h-12 w-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center hover:bg-emerald-600 hover:shadow-lg shadow-emerald-200 transition-all transform active:scale-95 flex-shrink-0"
+                                                >
+                                                    <WhatsAppIcon className="h-5 w-5" />
+                                                </a>
+                                            )
+                                        )}
+                                        <Link
+                                            to={`/clients/${client.id}`}
+                                            className="h-12 w-12 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-emerald-600 hover:border-emerald-100 hover:shadow-xl transition-all transform active:scale-95 flex-shrink-0"
                                         >
-                                            <WhatsAppIcon className="h-4 w-4" />
-
-                                        </a>
-                                    )}
-
-                                    <Link
-                                        to={`/clients/${client.id}`}
-                                        className="h-12 w-12 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-emerald-600 hover:border-emerald-100 hover:shadow-xl transition-all transform active:scale-95 flex-shrink-0"
-                                    >
-                                        <ExternalLink className="h-5 w-5" />
-                                    </Link>
+                                            <ExternalLink className="h-5 w-5" />
+                                        </Link>
+                                    </div>
                                 </div>
                             </CardContent>
                         </Card>
