@@ -33,6 +33,7 @@ const SOURCES = [
     { id: 'google', label: 'Google' },
     { id: 'referencia', label: 'Referencia' },
     { id: 'frio', label: 'Frío' },
+    { id: 'whatsapp', label: 'WhatsApp' },
     { id: 'otro', label: 'Otro' },
 ] as const;
 

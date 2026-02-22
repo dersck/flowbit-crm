@@ -49,6 +49,7 @@ const SOURCE_CONFIG = {
     google: { icon: Globe, color: 'text-emerald-600', bg: 'bg-emerald-50' },
     referencia: { icon: Users, color: 'text-indigo-600', bg: 'bg-indigo-50' },
     frio: { icon: Zap, color: 'text-amber-600', bg: 'bg-amber-50' },
+    whatsapp: { icon: WhatsAppIcon, color: 'text-emerald-600', bg: 'bg-emerald-50' },
     otro: { icon: MessageSquare, color: 'text-slate-600', bg: 'bg-slate-50' },
 } as const;
 
