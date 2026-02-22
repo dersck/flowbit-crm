@@ -242,7 +242,7 @@ export default function CreateClientDialog({ trigger }: CreateClientDialogProps)
                         >
                             {loading ? (
                                 <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                            ) : 'Crear Lead Estratégico'}
+                            ) : 'Crear Lead'}
                         </Button>
                     </DialogFooter>
                 </form>
