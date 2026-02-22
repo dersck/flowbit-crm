@@ -32,7 +32,7 @@ export interface Client {
     name: string;
     company?: string;
     stage: 'nuevo' | 'contactado' | 'negociacion' | 'ganado' | 'perdido';
-    source?: 'facebook' | 'instagram' | 'google' | 'referencia' | 'frio' | 'otro';
+    source?: 'facebook' | 'instagram' | 'google' | 'referencia' | 'frio' | 'whatsapp' | 'otro';
     budget?: number;
     contact: {
         phone?: string;
