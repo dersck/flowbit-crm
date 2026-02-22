@@ -75,7 +75,8 @@ export default function ClientsPage() {
 
     const filteredClients = clients?.filter(client =>
         client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        client.company?.toLowerCase().includes(searchTerm.toLowerCase())
+        client.company?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        client.contact.phone?.toLowerCase().includes(searchTerm.toLowerCase())
     ).sort((a, b) => {
         const dateA = a.updatedAt?.getTime() || a.createdAt?.getTime() || 0;
         const dateB = b.updatedAt?.getTime() || b.createdAt?.getTime() || 0;
