@@ -38,6 +38,7 @@ export interface Client {
         phone?: string;
         email?: string;
         whatsapp?: string;
+        noWhatsApp?: boolean;
     };
     tagIds: string[];
     notes?: string;
