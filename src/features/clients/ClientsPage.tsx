@@ -258,7 +258,7 @@ export default function ClientsPage() {
                                     </div>
                                 </div>
 
-                                <div className="bg-slate-50/50 px-4 py-5 border-t border-slate-50 flex items-center justify-center gap-2 group-hover:bg-white transition-colors duration-300 rounded-b-[3rem] mt-auto">
+                                <div className="bg-slate-50/50 px-10 py-7 border-t border-slate-50 flex items-center justify-center gap-3 group-hover:bg-white transition-colors duration-300 rounded-b-[3rem] mt-auto">
                                     <Button
                                         variant="ghost"
                                         size="icon"
@@ -309,55 +309,69 @@ export default function ClientsPage() {
                                                             {cfg.label}
                                                         </button>
                                                     ))}
-                                                </div>
-                                                <div className="pt-2 mt-2 border-t border-slate-100">
-                                                    <button
-                                                        type="button"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleToggleWhatsApp(client);
-                                                        }}
-                                                        className={cn(
-                                                            "w-full flex items-center gap-3 p-3 rounded-2xl text-[11px] font-bold transition-all text-left",
-                                                            client.contact.noWhatsApp ? "text-emerald-600 hover:bg-emerald-50" : "text-amber-600 hover:bg-amber-50"
-                                                        )}
-                                                    >
-                                                        {client.contact.noWhatsApp ? (
-                                                            <MessageSquare className="h-4 w-4" />
-                                                        ) : (
-                                                            <MessageSquareOff className="h-4 w-4" />
-                                                        )}
-                                                        {client.contact.noWhatsApp ? 'Tiene WhatsApp' : 'No tiene WhatsApp'}
-                                                    </button>
+                                                    <div className="pt-2 mt-2 border-t border-slate-100">
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleToggleWhatsApp(client);
+                                                            }}
+                                                            className={cn(
+                                                                "w-full flex items-center gap-3 p-3 rounded-2xl text-[11px] font-bold transition-all text-left",
+                                                                client.contact.noWhatsApp ? "text-emerald-600 hover:bg-emerald-50" : "text-amber-600 hover:bg-amber-50"
+                                                            )}
+                                                        >
+                                                            {client.contact.noWhatsApp ? (
+                                                                <MessageSquare className="h-4 w-4" />
+                                                            ) : (
+                                                                <MessageSquareOff className="h-4 w-4" />
+                                                            )}
+                                                            {client.contact.noWhatsApp ? 'Tiene WhatsApp' : 'No tiene WhatsApp'}
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </div>
                                         )}
                                     </div>
 
-                                    <div className="flex gap-2">
-                                        {client.contact.phone && (
-                                            client.contact.noWhatsApp ? (
-                                                <div className="h-12 w-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 cursor-not-allowed opacity-60" title="Este número no tiene WhatsApp">
-                                                    <MessageSquareOff className="h-5 w-5" />
-                                                </div>
-                                            ) : (
+                                    {client.contact.phone && (
+                                        client.contact.noWhatsApp ? (
+                                            <Button
+                                                variant="outline"
+                                                size="icon"
+                                                disabled
+                                                className="h-12 w-12 rounded-2xl bg-slate-50 text-slate-300 border-none opacity-40 flex-shrink-0"
+                                                title="Este número no tiene WhatsApp"
+                                            >
+                                                <MessageSquareOff className="h-5 w-5" />
+                                            </Button>
+                                        ) : (
+                                            <Button
+                                                asChild
+                                                size="icon"
+                                                className="h-12 w-12 rounded-2xl bg-emerald-500 text-white hover:bg-emerald-600 border-none shadow-lg shadow-emerald-200/50 transition-all transform active:scale-95 flex-shrink-0"
+                                            >
                                                 <a
                                                     href={`https://wa.me/${client.contact.phone.replace(/[^0-9]/g, '')}`}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
-                                                    className="h-12 w-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center hover:bg-emerald-600 hover:shadow-lg shadow-emerald-200 transition-all transform active:scale-95 flex-shrink-0"
                                                 >
                                                     <WhatsAppIcon className="h-5 w-5" />
                                                 </a>
-                                            )
-                                        )}
-                                        <Link
-                                            to={`/clients/${client.id}`}
-                                            className="h-12 w-12 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-emerald-600 hover:border-emerald-100 hover:shadow-xl transition-all transform active:scale-95 flex-shrink-0"
-                                        >
+                                            </Button>
+                                        )
+                                    )}
+
+                                    <Button
+                                        asChild
+                                        variant="outline"
+                                        size="icon"
+                                        className="h-12 w-12 rounded-2xl border-slate-200 text-slate-400 hover:text-emerald-600 hover:border-emerald-100 hover:shadow-xl transition-all transform active:scale-95 flex-shrink-0"
+                                    >
+                                        <Link to={`/clients/${client.id}`}>
                                             <ExternalLink className="h-5 w-5" />
                                         </Link>
-                                    </div>
+                                    </Button>
                                 </div>
                             </CardContent>
                         </Card>
