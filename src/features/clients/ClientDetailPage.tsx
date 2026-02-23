@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useEntityQuery, useWorkspaceQuery } from '@/hooks/useFirestore';
 import type { Client, Project, Task, Activity } from '@/types';
@@ -17,7 +18,8 @@ import {
     Video,
     Building2,
     Landmark,
-    Share2
+    Share2,
+    ChevronDown
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -35,6 +37,12 @@ import {
 
 export default function ClientDetailPage() {
     const { id } = useParams<{ id: string }>();
+    const [showIndicator, setShowIndicator] = useState(true);
+
+    const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+        if (e.currentTarget.scrollTop > 10) setShowIndicator(false);
+        else setShowIndicator(true);
+    };
 
     const { data: client, isLoading: isClientLoading } = useEntityQuery<Client>('clients', id);
     const { data: projects } = useWorkspaceQuery<Project>('projects', 'client-projects', [
@@ -225,70 +233,91 @@ export default function ClientDetailPage() {
                     </div>
 
                     {/* Contenedor con Scroll e Historia */}
-                    <div className="bg-white rounded-[2.5rem] border border-slate-100 p-2 shadow-sm">
-                        <div className="max-h-[400px] overflow-y-auto p-6 space-y-1 relative scrollbar-hide">
+                    <div className="bg-white rounded-[2.5rem] border border-slate-100 p-2 shadow-sm relative overflow-hidden">
+                        <div
+                            onScroll={handleScroll}
+                            className="max-h-[400px] overflow-y-auto p-6 space-y-1 relative scrollbar-hide pb-16"
+                        >
                             {/* Línea vertical de fondo */}
                             <div className="absolute left-[39px] top-10 bottom-10 w-px bg-slate-50" />
 
                             {activities && activities.length > 0 ? (
-                                activities.map((activity, index) => {
-                                    const isFirstOfDay = index === 0 ||
-                                        (activity.date instanceof Date && activities[index - 1].date instanceof Date &&
-                                            format(activity.date, 'yyyy-MM-dd') !== format(activities[index - 1].date, 'yyyy-MM-dd'));
+                                <>
+                                    {activities.map((activity, index) => {
+                                        const isFirstOfDay = index === 0 ||
+                                            (activity.date instanceof Date && activities[index - 1].date instanceof Date &&
+                                                format(activity.date, 'yyyy-MM-dd') !== format(activities[index - 1].date, 'yyyy-MM-dd'));
 
-                                    return (
-                                        <div key={activity.id} className="space-y-4">
-                                            {isFirstOfDay && (
-                                                <div className="py-4 flex items-center gap-4">
-                                                    <div className="h-px flex-1 bg-slate-50" />
-                                                    <span className="text-[9px] font-black text-slate-300 uppercase tracking-[0.3em] whitespace-nowrap">
-                                                        {format(activity.date as Date, 'dd MMMM', { locale: es })}
-                                                    </span>
-                                                    <div className="h-px flex-1 bg-slate-50" />
-                                                </div>
-                                            )}
-
-                                            <div className="relative flex items-start gap-6 group">
-                                                {/* Punto/Icono en la línea */}
-                                                <div className={cn(
-                                                    "h-8 w-8 rounded-full flex items-center justify-center shrink-0 z-10 border-4 border-white shadow-sm transition-all group-hover:scale-110",
-                                                    activity.type === 'note' ? "bg-slate-900" :
-                                                        activity.type === 'call' ? "bg-indigo-600" :
-                                                            activity.type === 'meeting' ? "bg-emerald-600" : "bg-blue-600"
-                                                )}>
-                                                    <ActivityIcon type={activity.type} size="h-3 w-3" />
-                                                </div>
-
-                                                {/* Contenido Compacto */}
-                                                <div className={cn(
-                                                    "flex-1 p-4 rounded-2xl border transition-all hover:shadow-md",
-                                                    activity.type === 'note' ? "bg-slate-50/50 border-slate-100 hover:bg-white" :
-                                                        activity.type === 'call' ? "bg-indigo-50/30 border-indigo-100/50 hover:bg-white" :
-                                                            activity.type === 'meeting' ? "bg-emerald-50/30 border-emerald-100/50 hover:bg-white" :
-                                                                "bg-blue-50/30 border-blue-100/50 hover:bg-white"
-                                                )}>
-                                                    <div className="flex justify-between items-start mb-1">
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="text-[10px] font-black uppercase text-slate-900">
-                                                                {activity.type === 'note' ? 'Nota' :
-                                                                    activity.type === 'call' ? 'Llamada' :
-                                                                        activity.type === 'email' ? 'Email' :
-                                                                            activity.type === 'meeting' ? 'Reunión' : activity.type}
-                                                            </span>
-                                                            <span className="text-[10px] font-bold text-slate-400">
-                                                                {format(activity.date as Date, 'HH:mm')}
-                                                            </span>
-                                                        </div>
-                                                        <MoreHorizontal className="h-3 w-3 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer" />
+                                        return (
+                                            <div key={activity.id} className="space-y-4">
+                                                {isFirstOfDay && (
+                                                    <div className="py-4 flex items-center gap-4">
+                                                        <div className="h-px flex-1 bg-slate-50" />
+                                                        <span className="text-[9px] font-black text-slate-300 uppercase tracking-[0.3em] whitespace-nowrap">
+                                                            {format(activity.date as Date, 'dd MMMM', { locale: es })}
+                                                        </span>
+                                                        <div className="h-px flex-1 bg-slate-50" />
                                                     </div>
-                                                    <p className="text-sm text-slate-600 font-medium leading-relaxed">
-                                                        {activity.summary}
-                                                    </p>
+                                                )}
+
+                                                <div className="relative flex items-start gap-6 group">
+                                                    {/* Punto/Icono en la línea */}
+                                                    <div className={cn(
+                                                        "h-8 w-8 rounded-full flex items-center justify-center shrink-0 z-10 border-4 border-white shadow-sm transition-all group-hover:scale-110",
+                                                        activity.type === 'note' ? "bg-slate-900" :
+                                                            activity.type === 'call' ? "bg-indigo-600" :
+                                                                activity.type === 'meeting' ? "bg-emerald-600" : "bg-blue-600"
+                                                    )}>
+                                                        <ActivityIcon type={activity.type} size="h-3 w-3" />
+                                                    </div>
+
+                                                    {/* Contenido Compacto */}
+                                                    <div className={cn(
+                                                        "flex-1 p-4 rounded-2xl border transition-all hover:shadow-md",
+                                                        activity.type === 'note' ? "bg-slate-50/50 border-slate-100 hover:bg-white" :
+                                                            activity.type === 'call' ? "bg-indigo-50/30 border-indigo-100/50 hover:bg-white" :
+                                                                activity.type === 'meeting' ? "bg-emerald-50/30 border-emerald-100/50 hover:bg-white" :
+                                                                    "bg-blue-50/30 border-blue-100/50 hover:bg-white"
+                                                    )}>
+                                                        <div className="flex justify-between items-start mb-1">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-[10px] font-black uppercase text-slate-900">
+                                                                    {activity.type === 'note' ? 'Nota' :
+                                                                        activity.type === 'call' ? 'Llamada' :
+                                                                            activity.type === 'email' ? 'Email' :
+                                                                                activity.type === 'meeting' ? 'Reunión' : activity.type}
+                                                                </span>
+                                                                <span className="text-[10px] font-bold text-slate-400">
+                                                                    {format(activity.date as Date, 'HH:mm')}
+                                                                </span>
+                                                            </div>
+                                                            <MoreHorizontal className="h-3 w-3 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer" />
+                                                        </div>
+                                                        <p className="text-sm text-slate-600 font-medium leading-relaxed">
+                                                            {activity.summary}
+                                                        </p>
+                                                    </div>
                                                 </div>
                                             </div>
+                                        );
+                                    })}
+
+                                    {/* Scroll Indicator Overlay */}
+                                    {showIndicator && activities.length > 3 && (
+                                        <div className="absolute bottom-6 left-0 right-0 flex flex-col items-center pointer-events-none animate-in fade-in duration-500">
+                                            {/* Degradado para dar profundidad */}
+                                            <div className="absolute bottom-[-24px] left-0 right-0 h-32 bg-gradient-to-t from-white via-white/90 to-transparent" />
+
+                                            {/* El aviso visual */}
+                                            <div className="relative z-20 flex flex-col items-center gap-1">
+                                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] bg-white/50 backdrop-blur-sm px-3 py-1 rounded-full border border-slate-100 shadow-sm">
+                                                    Ver más
+                                                </span>
+                                                <ChevronDown className="h-4 w-4 text-emerald-500 animate-bounce" />
+                                            </div>
                                         </div>
-                                    );
-                                })
+                                    )}
+                                </>
                             ) : (
                                 <div className="py-20 text-center">
                                     <div className="h-16 w-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
