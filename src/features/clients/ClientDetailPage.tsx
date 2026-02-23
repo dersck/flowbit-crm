@@ -226,7 +226,7 @@ export default function ClientDetailPage() {
 
                     {/* Contenedor con Scroll e Historia */}
                     <div className="bg-white rounded-[2.5rem] border border-slate-100 p-2 shadow-sm">
-                        <div className="max-h-[600px] overflow-y-auto p-6 space-y-1 relative scrollbar-hide">
+                        <div className="max-h-[400px] overflow-y-auto p-6 space-y-1 relative scrollbar-hide">
                             {/* Línea vertical de fondo */}
                             <div className="absolute left-[39px] top-10 bottom-10 w-px bg-slate-50" />
 
@@ -269,7 +269,12 @@ export default function ClientDetailPage() {
                                                 )}>
                                                     <div className="flex justify-between items-start mb-1">
                                                         <div className="flex items-center gap-2">
-                                                            <span className="text-[10px] font-black uppercase text-slate-900">{activity.type}</span>
+                                                            <span className="text-[10px] font-black uppercase text-slate-900">
+                                                                {activity.type === 'note' ? 'Nota' :
+                                                                    activity.type === 'call' ? 'Llamada' :
+                                                                        activity.type === 'email' ? 'Email' :
+                                                                            activity.type === 'meeting' ? 'Reunión' : activity.type}
+                                                            </span>
                                                             <span className="text-[10px] font-bold text-slate-400">
                                                                 {format(activity.date as Date, 'HH:mm')}
                                                             </span>
