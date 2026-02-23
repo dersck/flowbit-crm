@@ -43,10 +43,15 @@ export default function ClientDetailPage() {
     const { data: tasks } = useWorkspaceQuery<Task>('tasks', 'client-tasks', [
         where('clientId', '==', id)
     ]);
-    const { data: activities } = useWorkspaceQuery<Activity>('activities', 'client-activities', [
-        where('clientId', '==', id),
-        orderBy('date', 'desc')
+    const { data: activitiesData } = useWorkspaceQuery<Activity>('activities', `client-${id}-activities`, [
+        where('clientId', '==', id)
     ]);
+
+    const activities = activitiesData?.sort((a, b) => {
+        const dateA = a.date instanceof Date ? a.date.getTime() : 0;
+        const dateB = b.date instanceof Date ? b.date.getTime() : 0;
+        return dateB - dateA;
+    });
 
     if (isClientLoading) {
         return (
@@ -208,45 +213,64 @@ export default function ClientDetailPage() {
             </Card>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Timeline / Activities */}
                 <div className="lg:col-span-2 space-y-8">
                     <div className="flex items-center justify-between mb-2">
-                        <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-4">
-                            <div className="h-10 w-10 rounded-2xl bg-slate-900 flex items-center justify-center">
-                                <Clock className="h-5 w-5 text-white" />
-                            </div>
-                            Historial de Actividad
+                        <h2 className="text-xl font-black text-slate-900 uppercase tracking-widest flex items-center gap-3">
+                            <Clock className="h-5 w-5 text-slate-400" />
+                            Historial
                         </h2>
                         <ActivityDialog clientId={id!} />
                     </div>
 
                     <div className="relative space-y-8 before:absolute before:inset-0 before:ml-5 before:h-full before:w-0.5 before:bg-slate-100">
                         {activities && activities.length > 0 ? (
-                            activities.map((activity) => (
-                                <div key={activity.id} className="relative flex items-start gap-8 group">
-                                    <div className={cn(
-                                        "h-10 w-10 rounded-xl flex items-center justify-center shrink-0 z-10 shadow-sm border border-white",
-                                        activity.type === 'note' ? "bg-slate-900" :
-                                            activity.type === 'call' ? "bg-indigo-600" :
-                                                activity.type === 'meeting' ? "bg-emerald-600" : "bg-blue-600"
-                                    )}>
-                                        <ActivityIcon type={activity.type} />
+                            activities.map((activity, index) => {
+                                const isFirstOfDay = index === 0 ||
+                                    (activity.date instanceof Date && activities[index - 1].date instanceof Date &&
+                                        format(activity.date, 'yyyy-MM-dd') !== format(activities[index - 1].date, 'yyyy-MM-dd'));
+
+                                return (
+                                    <div key={activity.id} className="relative flex items-start gap-8 group">
+                                        <div className={cn(
+                                            "h-10 w-10 rounded-xl flex items-center justify-center shrink-0 z-10 shadow-sm border border-white transition-transform group-hover:scale-110",
+                                            activity.type === 'note' ? "bg-slate-900" :
+                                                activity.type === 'call' ? "bg-indigo-600" :
+                                                    activity.type === 'meeting' ? "bg-emerald-600" : "bg-blue-600"
+                                        )}>
+                                            <ActivityIcon type={activity.type} />
+                                        </div>
+
+                                        <div className="flex-1 space-y-4">
+                                            {isFirstOfDay && (
+                                                <div className="mb-2">
+                                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                                                        {format(activity.date as Date, 'dd MMMM, yyyy', { locale: es })}
+                                                    </span>
+                                                </div>
+                                            )}
+
+                                            <Card className={cn(
+                                                "border-slate-100 shadow-sm rounded-2xl hover:shadow-md transition-all bg-white group-hover:-translate-y-0.5",
+                                                activity.type === 'call' && "border-l-4 border-l-indigo-600",
+                                                activity.type === 'meeting' && "border-l-4 border-l-emerald-600",
+                                                activity.type === 'email' && "border-l-4 border-l-blue-600"
+                                            )}>
+                                                <CardContent className="p-5">
+                                                    <div className="flex justify-between items-start mb-2">
+                                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                                                            {format(activity.date as Date, 'HH:mm')} • {activity.type}
+                                                        </p>
+                                                        <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-300 hover:text-slate-600">
+                                                            <MoreHorizontal className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                    <p className="text-slate-700 font-bold leading-relaxed">{activity.summary}</p>
+                                                </CardContent>
+                                            </Card>
+                                        </div>
                                     </div>
-                                    <Card className="flex-1 border-slate-100 shadow-sm rounded-[2rem] hover:shadow-xl hover:border-slate-200 transition-all bg-white group-hover:-translate-y-1">
-                                        <CardContent className="p-6">
-                                            <div className="flex justify-between items-start mb-2">
-                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                                                    {activity.date instanceof Date ? format(activity.date, 'eeee, dd MMMM', { locale: es }) : 'Reciente'}
-                                                </p>
-                                                <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-300">
-                                                    <MoreHorizontal className="h-4 w-4" />
-                                                </Button>
-                                            </div>
-                                            <p className="text-slate-800 font-bold leading-relaxed">{activity.summary}</p>
-                                        </CardContent>
-                                    </Card>
-                                </div>
-                            ))
+                                );
+                            })
                         ) : (
                             <div className="pl-16 py-10">
                                 <p className="text-slate-400 font-bold italic">No hay interacciones registradas aún.</p>
@@ -317,12 +341,12 @@ export default function ClientDetailPage() {
     );
 }
 
-function ActivityIcon({ type }: { type: Activity['type'] }) {
+function ActivityIcon({ type, size = "h-5 w-5" }: { type: Activity['type'], size?: string }) {
     switch (type) {
-        case 'note': return <Clock className="h-5 w-5 text-white" />;
-        case 'call': return <Phone className="h-5 w-5 text-white" />;
-        case 'email': return <Mail className="h-5 w-5 text-white" />;
-        case 'meeting': return <Video className="h-5 w-5 text-white" />;
-        default: return <MessageSquare className="h-5 w-5 text-white" />;
+        case 'note': return <MessageSquare className={cn(size, "text-white")} />;
+        case 'call': return <Phone className={cn(size, "text-white")} />;
+        case 'email': return <Mail className={cn(size, "text-white")} />;
+        case 'meeting': return <Video className={cn(size, "text-white")} />;
+        default: return <Clock className={cn(size, "text-white")} />;
     }
 }
