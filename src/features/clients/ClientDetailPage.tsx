@@ -213,69 +213,86 @@ export default function ClientDetailPage() {
             </Card>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 space-y-8">
-                    <div className="flex items-center justify-between mb-2">
-                        <h2 className="text-xl font-black text-slate-900 uppercase tracking-widest flex items-center gap-3">
-                            <Clock className="h-5 w-5 text-slate-400" />
-                            Historial
-                        </h2>
+                <div className="lg:col-span-2 space-y-6">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="h-8 w-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500">
+                                <Clock className="h-4 w-4" />
+                            </div>
+                            <h2 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em]">Historial de actividades </h2>
+                        </div>
                         <ActivityDialog clientId={id!} />
                     </div>
 
-                    <div className="relative space-y-8 before:absolute before:inset-0 before:ml-5 before:h-full before:w-0.5 before:bg-slate-100">
-                        {activities && activities.length > 0 ? (
-                            activities.map((activity, index) => {
-                                const isFirstOfDay = index === 0 ||
-                                    (activity.date instanceof Date && activities[index - 1].date instanceof Date &&
-                                        format(activity.date, 'yyyy-MM-dd') !== format(activities[index - 1].date, 'yyyy-MM-dd'));
+                    {/* Contenedor con Scroll e Historia */}
+                    <div className="bg-white rounded-[2.5rem] border border-slate-100 p-2 shadow-sm">
+                        <div className="max-h-[600px] overflow-y-auto p-6 space-y-1 relative scrollbar-hide">
+                            {/* Línea vertical de fondo */}
+                            <div className="absolute left-[39px] top-10 bottom-10 w-px bg-slate-50" />
 
-                                return (
-                                    <div key={activity.id} className="relative flex items-start gap-8 group">
-                                        <div className={cn(
-                                            "h-10 w-10 rounded-xl flex items-center justify-center shrink-0 z-10 shadow-sm border border-white transition-transform group-hover:scale-110",
-                                            activity.type === 'note' ? "bg-slate-900" :
-                                                activity.type === 'call' ? "bg-indigo-600" :
-                                                    activity.type === 'meeting' ? "bg-emerald-600" : "bg-blue-600"
-                                        )}>
-                                            <ActivityIcon type={activity.type} />
-                                        </div>
+                            {activities && activities.length > 0 ? (
+                                activities.map((activity, index) => {
+                                    const isFirstOfDay = index === 0 ||
+                                        (activity.date instanceof Date && activities[index - 1].date instanceof Date &&
+                                            format(activity.date, 'yyyy-MM-dd') !== format(activities[index - 1].date, 'yyyy-MM-dd'));
 
-                                        <div className="flex-1 space-y-4">
+                                    return (
+                                        <div key={activity.id} className="space-y-4">
                                             {isFirstOfDay && (
-                                                <div className="mb-2">
-                                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-                                                        {format(activity.date as Date, 'dd MMMM, yyyy', { locale: es })}
+                                                <div className="py-4 flex items-center gap-4">
+                                                    <div className="h-px flex-1 bg-slate-50" />
+                                                    <span className="text-[9px] font-black text-slate-300 uppercase tracking-[0.3em] whitespace-nowrap">
+                                                        {format(activity.date as Date, 'dd MMMM', { locale: es })}
                                                     </span>
+                                                    <div className="h-px flex-1 bg-slate-50" />
                                                 </div>
                                             )}
 
-                                            <Card className={cn(
-                                                "border-slate-100 shadow-sm rounded-2xl hover:shadow-md transition-all bg-white group-hover:-translate-y-0.5",
-                                                activity.type === 'call' && "border-l-4 border-l-indigo-600",
-                                                activity.type === 'meeting' && "border-l-4 border-l-emerald-600",
-                                                activity.type === 'email' && "border-l-4 border-l-blue-600"
-                                            )}>
-                                                <CardContent className="p-5">
-                                                    <div className="flex justify-between items-start mb-2">
-                                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                                                            {format(activity.date as Date, 'HH:mm')} • {activity.type}
-                                                        </p>
-                                                        <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-300 hover:text-slate-600">
-                                                            <MoreHorizontal className="h-4 w-4" />
-                                                        </Button>
+                                            <div className="relative flex items-start gap-6 group">
+                                                {/* Punto/Icono en la línea */}
+                                                <div className={cn(
+                                                    "h-8 w-8 rounded-full flex items-center justify-center shrink-0 z-10 border-4 border-white shadow-sm transition-all group-hover:scale-110",
+                                                    activity.type === 'note' ? "bg-slate-900" :
+                                                        activity.type === 'call' ? "bg-indigo-600" :
+                                                            activity.type === 'meeting' ? "bg-emerald-600" : "bg-blue-600"
+                                                )}>
+                                                    <ActivityIcon type={activity.type} size="h-3 w-3" />
+                                                </div>
+
+                                                {/* Contenido Compacto */}
+                                                <div className={cn(
+                                                    "flex-1 p-4 rounded-2xl border transition-all hover:shadow-md",
+                                                    activity.type === 'note' ? "bg-slate-50/50 border-slate-100 hover:bg-white" :
+                                                        activity.type === 'call' ? "bg-indigo-50/30 border-indigo-100/50 hover:bg-white" :
+                                                            activity.type === 'meeting' ? "bg-emerald-50/30 border-emerald-100/50 hover:bg-white" :
+                                                                "bg-blue-50/30 border-blue-100/50 hover:bg-white"
+                                                )}>
+                                                    <div className="flex justify-between items-start mb-1">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-[10px] font-black uppercase text-slate-900">{activity.type}</span>
+                                                            <span className="text-[10px] font-bold text-slate-400">
+                                                                {format(activity.date as Date, 'HH:mm')}
+                                                            </span>
+                                                        </div>
+                                                        <MoreHorizontal className="h-3 w-3 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer" />
                                                     </div>
-                                                    <p className="text-slate-700 font-bold leading-relaxed">{activity.summary}</p>
-                                                </CardContent>
-                                            </Card>
+                                                    <p className="text-sm text-slate-600 font-medium leading-relaxed">
+                                                        {activity.summary}
+                                                    </p>
+                                                </div>
+                                            </div>
                                         </div>
+                                    );
+                                })
+                            ) : (
+                                <div className="py-20 text-center">
+                                    <div className="h-16 w-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <MessageSquare className="h-6 w-6 text-slate-200" />
                                     </div>
-                                );
-                            })
-                        ) : (
-                            <div className="pl-16 py-10">
-                                <p className="text-slate-400 font-bold italic">No hay interacciones registradas aún.</p>
-                            </div>
-                        )}
+                                    <p className="text-slate-400 font-bold italic text-sm">Sin actividad reciente</p>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
 
