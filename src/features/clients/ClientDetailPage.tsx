@@ -24,7 +24,7 @@ import {
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { where, orderBy } from 'firebase/firestore';
+import { where } from 'firebase/firestore';
 import ClientDialog from './ClientDialog';
 import ActivityDialog from './ActivityDialog';
 import CreateProjectDialog from '../projects/CreateProjectDialog';
@@ -227,7 +227,7 @@ export default function ClientDetailPage() {
                             <div className="h-8 w-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500">
                                 <Clock className="h-4 w-4" />
                             </div>
-                            <h2 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em]">Historial de actividades </h2>
+                            <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">Historial de actividades </h2>
                         </div>
                         <ActivityDialog clientId={id!} />
                     </div>
