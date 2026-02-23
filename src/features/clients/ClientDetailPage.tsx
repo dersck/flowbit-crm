@@ -14,12 +14,24 @@ import {
     Plus,
     Clock,
     MessageSquare,
-    Video
+    Video,
+    Building2,
+    Landmark,
+    Share2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { where, orderBy } from 'firebase/firestore';
+import ClientDialog from './ClientDialog';
+import ActivityDialog from './ActivityDialog';
+import CreateProjectDialog from '../projects/CreateProjectDialog';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function ClientDetailPage() {
     const { id } = useParams<{ id: string }>();
@@ -67,10 +79,28 @@ export default function ClientDetailPage() {
                     Volver
                 </Link>
                 <div className="flex gap-3">
-                    <Button variant="outline" className="h-12 rounded-2xl border-slate-200 font-bold px-6 bg-white">Editar Perfil</Button>
-                    <Button className="h-12 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 shadow-lg shadow-emerald-100">
-                        Acción rápida
-                    </Button>
+                    <ClientDialog
+                        client={client}
+                        trigger={<Button variant="outline" className="h-12 rounded-2xl border-slate-200 font-bold px-6 bg-white">Editar Perfil</Button>}
+                    />
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button className="h-12 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 shadow-lg shadow-emerald-100">
+                                Acción rápida
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="rounded-2xl p-2 border-slate-100 shadow-xl">
+                            <DropdownMenuItem className="rounded-xl font-bold py-3 px-4 cursor-pointer gap-3">
+                                <Mail className="h-4 w-4 text-emerald-600" /> Enviar Email
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="rounded-xl font-bold py-3 px-4 cursor-pointer gap-3">
+                                <Phone className="h-4 w-4 text-indigo-600" /> Registrar Llamada
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="rounded-xl font-bold py-3 px-4 cursor-pointer gap-3">
+                                <Plus className="h-4 w-4 text-slate-600" /> Nueva Tarea
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
             </div>
 
@@ -114,6 +144,30 @@ export default function ClientDetailPage() {
                                             <Phone className="h-5 w-5" />
                                         </div>
                                         {client.contact.phone}
+                                    </div>
+                                )}
+                                {client.company && (
+                                    <div className="flex items-center gap-4 text-slate-500 font-bold group">
+                                        <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center border border-slate-100 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
+                                            <Building2 className="h-5 w-5" />
+                                        </div>
+                                        {client.company}
+                                    </div>
+                                )}
+                                {client.budget && (
+                                    <div className="flex items-center gap-4 text-slate-500 font-bold group">
+                                        <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center border border-slate-100 group-hover:bg-amber-50 group-hover:text-amber-600 transition-colors">
+                                            <Landmark className="h-5 w-5" />
+                                        </div>
+                                        {new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(client.budget)}
+                                    </div>
+                                )}
+                                {client.source && (
+                                    <div className="flex items-center gap-4 text-slate-500 font-bold group">
+                                        <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center border border-slate-100 group-hover:bg-rose-50 group-hover:text-rose-600 transition-colors">
+                                            <Share2 className="h-5 w-5" />
+                                        </div>
+                                        Origen: <span className="capitalize">{client.source}</span>
                                     </div>
                                 )}
                                 <div className="flex items-center gap-4 text-slate-500 font-bold group">
@@ -163,10 +217,7 @@ export default function ClientDetailPage() {
                             </div>
                             Historial de Actividad
                         </h2>
-                        <Button variant="outline" className="rounded-xl border-slate-200 font-bold gap-2">
-                            <Plus className="h-4 w-4" />
-                            Registrar Evento
-                        </Button>
+                        <ActivityDialog clientId={id!} />
                     </div>
 
                     <div className="relative space-y-8 before:absolute before:inset-0 before:ml-5 before:h-full before:w-0.5 before:bg-slate-100">
@@ -210,7 +261,7 @@ export default function ClientDetailPage() {
                     <Card className="border-slate-200 rounded-[2.5rem] shadow-xl shadow-slate-100 overflow-hidden bg-white">
                         <CardHeader className="bg-slate-50/50 p-6 border-b border-slate-100 flex flex-row items-center justify-between">
                             <CardTitle className="text-sm font-black uppercase tracking-widest text-slate-900">Proyectos</CardTitle>
-                            <Button size="icon" variant="ghost" className="h-8 w-8"><Plus className="h-4 w-4" /></Button>
+                            <CreateProjectDialog clientId={id!} />
                         </CardHeader>
                         <CardContent className="p-4 space-y-2">
                             {projects && projects.length > 0 ? (
@@ -235,14 +286,29 @@ export default function ClientDetailPage() {
                     <Card className="border-none bg-slate-900 rounded-[2.5rem] p-8 text-white shadow-2xl shadow-slate-300">
                         <h3 className="text-xl font-black mb-4 uppercase tracking-tight">Acciones</h3>
                         <div className="grid grid-cols-2 gap-3">
-                            <button className="flex flex-col items-center justify-center gap-2 p-4 rounded-3xl bg-white/5 hover:bg-white/10 transition-colors border border-white/10">
-                                <Mail className="h-5 w-5 text-emerald-400" />
-                                <span className="text-[10px] font-black uppercase">Email</span>
-                            </button>
-                            <button className="flex flex-col items-center justify-center gap-2 p-4 rounded-3xl bg-white/5 hover:bg-white/10 transition-colors border border-white/10">
-                                <Video className="h-5 w-5 text-indigo-400" />
-                                <span className="text-[10px] font-black uppercase">Reunión</span>
-                            </button>
+                            <ActivityDialog
+                                clientId={id!}
+                                clientName={client.name}
+                                defaultType="email"
+                                email={client.contact.email}
+                                trigger={
+                                    <button className="flex flex-col items-center justify-center gap-2 p-4 rounded-3xl bg-white/5 hover:bg-white/10 transition-colors border border-white/10">
+                                        <Mail className="h-5 w-5 text-emerald-400" />
+                                        <span className="text-[10px] font-black uppercase">Email</span>
+                                    </button>
+                                }
+                            />
+                            <ActivityDialog
+                                clientId={id!}
+                                clientName={client.name}
+                                defaultType="meeting"
+                                trigger={
+                                    <button className="flex flex-col items-center justify-center gap-2 p-4 rounded-3xl bg-white/5 hover:bg-white/10 transition-colors border border-white/10">
+                                        <Video className="h-5 w-5 text-indigo-400" />
+                                        <span className="text-[10px] font-black uppercase">Reunión</span>
+                                    </button>
+                                }
+                            />
                         </div>
                     </Card>
                 </div>

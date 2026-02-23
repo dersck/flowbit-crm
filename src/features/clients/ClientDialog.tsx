@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useWorkspaceMutation } from '@/hooks/useFirestore';
 import {
     Dialog,
@@ -11,12 +11,16 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, User, Mail, Phone, Loader2, Building2, Landmark, Share2 } from 'lucide-react';
+import { Plus, User, Mail, Phone, Loader2, Building2, Landmark, Share2, Edit2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import type { Client } from '@/types';
 
-interface CreateClientDialogProps {
+interface ClientDialogProps {
     trigger?: React.ReactNode;
+    client?: Client;
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
 }
 
 const STAGES = [
@@ -37,10 +41,13 @@ const SOURCES = [
     { id: 'otro', label: 'Otro' },
 ] as const;
 
-export default function CreateClientDialog({ trigger }: CreateClientDialogProps) {
-    const [open, setOpen] = useState(false);
+export default function ClientDialog({ trigger, client, open: controlledOpen, onOpenChange: setControlledOpen }: ClientDialogProps) {
+    const [internalOpen, setInternalOpen] = useState(false);
+    const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
+    const setOpen = setControlledOpen !== undefined ? setControlledOpen : setInternalOpen;
+
     const [loading, setLoading] = useState(false);
-    const { createMutation } = useWorkspaceMutation('clients');
+    const { createMutation, updateMutation } = useWorkspaceMutation('clients');
 
     const [formData, setFormData] = useState({
         name: '',
@@ -52,13 +59,37 @@ export default function CreateClientDialog({ trigger }: CreateClientDialogProps)
         stage: 'nuevo' as typeof STAGES[number]['id'],
     });
 
+    useEffect(() => {
+        if (client) {
+            setFormData({
+                name: client.name || '',
+                company: client.company || '',
+                email: client.contact?.email || '',
+                phone: client.contact?.phone || '',
+                budget: client.budget?.toString() || '',
+                source: client.source || 'otro',
+                stage: client.stage || 'nuevo',
+            });
+        } else {
+            setFormData({
+                name: '',
+                company: '',
+                email: '',
+                phone: '',
+                budget: '',
+                source: 'otro',
+                stage: 'nuevo',
+            });
+        }
+    }, [client, open]);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!formData.name) return;
 
         setLoading(true);
         try {
-            await createMutation.mutateAsync({
+            const data = {
                 name: formData.name,
                 company: formData.company || null,
                 stage: formData.stage,
@@ -68,22 +99,27 @@ export default function CreateClientDialog({ trigger }: CreateClientDialogProps)
                     email: formData.email || null,
                     phone: formData.phone || null,
                 },
-                tagIds: [],
-            });
-            toast.success('Cliente creado correctamente');
+                tagIds: client?.tagIds || [],
+                updatedAt: new Date(),
+            };
+
+            if (client) {
+                await updateMutation.mutateAsync({
+                    id: client.id,
+                    data: data
+                });
+                toast.success('Cliente actualizado correctamente');
+            } else {
+                await createMutation.mutateAsync({
+                    ...data,
+                    createdAt: new Date(),
+                });
+                toast.success('Cliente creado correctamente');
+            }
             setOpen(false);
-            setFormData({
-                name: '',
-                company: '',
-                email: '',
-                phone: '',
-                budget: '',
-                source: 'otro',
-                stage: 'nuevo'
-            });
         } catch (error) {
             console.error(error);
-            toast.error('Error al crear el cliente');
+            toast.error(client ? 'Error al actualizar el cliente' : 'Error al crear el cliente');
         } finally {
             setLoading(false);
         }
@@ -91,23 +127,26 @@ export default function CreateClientDialog({ trigger }: CreateClientDialogProps)
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                {trigger || (
+            {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
+            {!trigger && !controlledOpen && (
+                <DialogTrigger asChild>
                     <Button className="h-12 px-8 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white shadow-xl shadow-slate-200 font-bold flex gap-3">
                         <Plus className="h-5 w-5" />
                         Añadir Cliente
                     </Button>
-                )}
-            </DialogTrigger>
+                </DialogTrigger>
+            )}
             <DialogContent className="sm:max-w-[600px] border-none rounded-[2.5rem] p-10 bg-white max-h-[90vh] overflow-y-auto scrollbar-hide">
                 <DialogHeader className="space-y-4">
                     <div className="h-14 w-14 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600">
-                        <User className="h-7 w-7" />
+                        {client ? <Edit2 className="h-7 w-7" /> : <User className="h-7 w-7" />}
                     </div>
                     <div>
-                        <DialogTitle className="text-3xl font-black text-slate-900 tracking-tight">Nuevo Lead</DialogTitle>
+                        <DialogTitle className="text-3xl font-black text-slate-900 tracking-tight">
+                            {client ? 'Editar Perfil' : 'Nuevo Lead'}
+                        </DialogTitle>
                         <DialogDescription className="text-slate-500 font-bold text-base mt-1">
-                            Captura la información estratégica para cerrar la venta.
+                            {client ? 'Actualiza la información del cliente.' : 'Captura la información estratégica para cerrar la venta.'}
                         </DialogDescription>
                     </div>
                 </DialogHeader>
@@ -206,7 +245,7 @@ export default function CreateClientDialog({ trigger }: CreateClientDialogProps)
 
                         {/* Stage Selector */}
                         <div className="space-y-4 pt-4 border-t border-slate-50">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Etapa Inicial en el Embudo</label>
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Etapa actual</label>
                             <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                                 {STAGES.map((stage) => (
                                     <button
@@ -243,7 +282,7 @@ export default function CreateClientDialog({ trigger }: CreateClientDialogProps)
                         >
                             {loading ? (
                                 <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                            ) : 'Crear Lead'}
+                            ) : (client ? 'Guardar Cambios' : 'Crear Lead')}
                         </Button>
                     </DialogFooter>
                 </form>
