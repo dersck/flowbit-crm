@@ -34,7 +34,7 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
-import CreateClientDialog from './CreateClientDialog';
+import CreateClientDialog from './ClientDialog';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import FilterSidebar from './FilterSidebar';
 import PipelineView from '@/features/clients/PipelineView';
