@@ -30,6 +30,7 @@ interface ActivityDialogProps {
     trigger?: React.ReactNode;
     defaultType?: Activity['type'];
     email?: string;
+    activity?: Activity;
 }
 
 const ACTIVITY_TYPES = [
@@ -39,25 +40,31 @@ const ACTIVITY_TYPES = [
     { id: 'meeting', label: 'Reunión', icon: Video, color: 'bg-emerald-600', textColor: 'text-emerald-600' },
 ] as const;
 
-export default function ActivityDialog({ clientId, clientName = 'Cliente', trigger, defaultType = 'note', email }: ActivityDialogProps) {
+export default function ActivityDialog({ clientId, clientName = 'Cliente', trigger, defaultType = 'note', email, activity }: ActivityDialogProps) {
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
-    const { createMutation } = useWorkspaceMutation('activities');
+    const { createMutation, updateMutation } = useWorkspaceMutation('activities');
 
     const [formData, setFormData] = useState({
-        type: defaultType,
-        summary: '',
+        type: activity?.type || defaultType,
+        summary: activity?.summary || '',
     });
 
     const handleOpenChange = (newOpen: boolean) => {
         setOpen(newOpen);
         if (newOpen) {
-            setFormData(prev => ({ ...prev, type: defaultType }));
-            if (defaultType === 'email' && email) {
-                window.location.href = `mailto:${email}`;
-            } else if (defaultType === 'meeting') {
-                const calendarUrl = `https://calendar.google.com/calendar/u/0/r/eventedit?text=Reunión+con+${encodeURIComponent(clientName)}`;
-                window.open(calendarUrl, '_blank');
+            setFormData({
+                type: activity?.type || defaultType,
+                summary: activity?.summary || '',
+            });
+
+            if (!activity) { // Only handle auto-actions for new activities
+                if (defaultType === 'email' && email) {
+                    window.location.href = `mailto:${email}`;
+                } else if (defaultType === 'meeting') {
+                    const calendarUrl = `https://calendar.google.com/calendar/u/0/r/eventedit?text=Reunión+con+${encodeURIComponent(clientName)}`;
+                    window.open(calendarUrl, '_blank');
+                }
             }
         }
     };
@@ -68,19 +75,30 @@ export default function ActivityDialog({ clientId, clientName = 'Cliente', trigg
 
         setLoading(true);
         try {
-            await createMutation.mutateAsync({
-                clientId,
-                type: formData.type,
-                summary: formData.summary,
-                date: new Date(),
-                createdAt: new Date(),
-            });
-            toast.success('Actividad registrada correctamente');
+            if (activity) {
+                await updateMutation.mutateAsync({
+                    id: activity.id,
+                    data: {
+                        type: formData.type,
+                        summary: formData.summary,
+                    }
+                });
+                toast.success('Actividad actualizada correctamente');
+            } else {
+                await createMutation.mutateAsync({
+                    clientId,
+                    type: formData.type,
+                    summary: formData.summary,
+                    date: new Date(),
+                    createdAt: new Date(),
+                });
+                toast.success('Actividad registrada correctamente');
+            }
             setOpen(false);
-            setFormData({ type: 'note', summary: '' });
+            if (!activity) setFormData({ type: 'note', summary: '' });
         } catch (error) {
             console.error(error);
-            toast.error('Error al registrar la actividad');
+            toast.error(activity ? 'Error al actualizar la actividad' : 'Error al registrar la actividad');
         } finally {
             setLoading(false);
         }
@@ -102,9 +120,13 @@ export default function ActivityDialog({ clientId, clientName = 'Cliente', trigg
                         <Clock className="h-7 w-7" />
                     </div>
                     <div>
-                        <DialogTitle className="text-3xl font-black text-slate-900 tracking-tight">Registrar Evento</DialogTitle>
+                        <DialogTitle className="text-3xl font-black text-slate-900 tracking-tight">
+                            {activity ? 'Editar Evento' : 'Registrar Evento'}
+                        </DialogTitle>
                         <DialogDescription className="text-slate-500 font-bold text-base mt-1">
-                            Documenta la interacción con el cliente para mantener el historial actualizado.
+                            {activity
+                                ? 'Modifica los detalles de la actividad seleccionada.'
+                                : 'Documenta la interacción con el cliente para mantener el historial actualizado.'}
                         </DialogDescription>
                     </div>
                 </DialogHeader>
@@ -160,7 +182,7 @@ export default function ActivityDialog({ clientId, clientName = 'Cliente', trigg
                         >
                             {loading ? (
                                 <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                            ) : 'Guardar Evento'}
+                            ) : activity ? 'Actualizar' : 'Guardar Evento'}
                         </Button>
                     </DialogFooter>
                 </form>

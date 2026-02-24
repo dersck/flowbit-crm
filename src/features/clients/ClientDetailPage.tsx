@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { useEntityQuery, useWorkspaceQuery } from '@/hooks/useFirestore';
+import { useEntityQuery, useWorkspaceQuery, useWorkspaceMutation } from '@/hooks/useFirestore';
 import type { Client, Project, Task, Activity } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,12 +19,15 @@ import {
     Building2,
     Landmark,
     Share2,
-    ChevronDown
+    ChevronDown,
+    Edit2,
+    Trash2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { where } from 'firebase/firestore';
+import { toast } from 'sonner';
 import ClientDialog from './ClientDialog';
 import ActivityDialog from './ActivityDialog';
 import CreateProjectDialog from '../projects/CreateProjectDialog';
@@ -54,6 +57,7 @@ export default function ClientDetailPage() {
     const { data: activitiesData } = useWorkspaceQuery<Activity>('activities', `client-${id}-activities`, [
         where('clientId', '==', id)
     ]);
+    const { deleteMutation } = useWorkspaceMutation('activities');
 
     const activities = activitiesData?.sort((a, b) => {
         const dateA = a.date instanceof Date ? a.date.getTime() : 0;
@@ -291,7 +295,42 @@ export default function ClientDetailPage() {
                                                                     {format(activity.date as Date, 'HH:mm')}
                                                                 </span>
                                                             </div>
-                                                            <MoreHorizontal className="h-3 w-3 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer" />
+                                                            <DropdownMenu>
+                                                                <DropdownMenuTrigger asChild>
+                                                                    <button className="p-1 rounded-lg hover:bg-slate-100 text-slate-300 hover:text-slate-600 opacity-0 group-hover:opacity-100 transition-all outline-none">
+                                                                        <MoreHorizontal className="h-4 w-4" />
+                                                                    </button>
+                                                                </DropdownMenuTrigger>
+                                                                <DropdownMenuContent align="end" className="rounded-2xl p-2 border-slate-100 shadow-xl min-w-[160px]">
+                                                                    <ActivityDialog
+                                                                        clientId={id!}
+                                                                        activity={activity}
+                                                                        trigger={
+                                                                            <DropdownMenuItem
+                                                                                onSelect={(e) => e.preventDefault()}
+                                                                                className="rounded-xl font-bold py-3 px-4 cursor-pointer gap-3"
+                                                                            >
+                                                                                <Edit2 className="h-4 w-4 text-emerald-600" /> Editar
+                                                                            </DropdownMenuItem>
+                                                                        }
+                                                                    />
+                                                                    <DropdownMenuItem
+                                                                        className="rounded-xl font-bold py-3 px-4 cursor-pointer gap-3 text-rose-600 focus:text-rose-600 focus:bg-rose-50"
+                                                                        onClick={async () => {
+                                                                            if (confirm('¿Estás seguro de eliminar esta actividad?')) {
+                                                                                try {
+                                                                                    await deleteMutation.mutateAsync(activity.id);
+                                                                                    toast.success('Actividad eliminada');
+                                                                                } catch (error) {
+                                                                                    toast.error('Error al eliminar');
+                                                                                }
+                                                                            }
+                                                                        }}
+                                                                    >
+                                                                        <Trash2 className="h-4 w-4" /> Eliminar
+                                                                    </DropdownMenuItem>
+                                                                </DropdownMenuContent>
+                                                            </DropdownMenu>
                                                         </div>
                                                         <p className="text-sm text-slate-600 font-medium leading-relaxed">
                                                             {activity.summary}
