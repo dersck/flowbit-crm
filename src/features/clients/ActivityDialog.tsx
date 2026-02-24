@@ -159,7 +159,7 @@ export default function ActivityDialog({ clientId, clientName = 'Cliente', trigg
                             <Textarea
                                 required
                                 placeholder="Describe brevemente lo ocurrido..."
-                                className="min-h-[120px] rounded-2xl border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-slate-900/10 font-medium p-4 resize-none"
+                                className="min-h-[120px] rounded-2xl border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-slate-900/10 font-medium p-4 resize-none text-slate-900 dark:bg-slate-50/50 dark:text-slate-900"
                                 value={formData.summary}
                                 onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFormData({ ...formData, summary: e.target.value })}
                             />

@@ -162,7 +162,7 @@ export default function ClientDialog({ trigger, client, open: controlledOpen, on
                                     <Input
                                         required
                                         placeholder="Ej. Juan Pérez"
-                                        className="h-12 pl-12 rounded-2xl border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-emerald-500/20"
+                                        className="h-12 pl-12 rounded-2xl border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-emerald-500/20 text-slate-900 dark:bg-slate-50/50 dark:text-slate-900"
                                         value={formData.name}
                                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                     />
@@ -174,7 +174,7 @@ export default function ClientDialog({ trigger, client, open: controlledOpen, on
                                     <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
                                     <Input
                                         placeholder="Nombre de la empresa"
-                                        className="h-12 pl-12 rounded-2xl border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-indigo-500/20"
+                                        className="h-12 pl-12 rounded-2xl border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-indigo-500/20 text-slate-900 dark:bg-slate-50/50 dark:text-slate-900"
                                         value={formData.company}
                                         onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                                     />
@@ -191,7 +191,7 @@ export default function ClientDialog({ trigger, client, open: controlledOpen, on
                                     <Input
                                         type="email"
                                         placeholder="juan@empresa.com"
-                                        className="h-12 pl-12 rounded-2xl border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-emerald-500/20"
+                                        className="h-12 pl-12 rounded-2xl border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-emerald-500/20 text-slate-900 dark:bg-slate-50/50 dark:text-slate-900"
                                         value={formData.email}
                                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                     />
@@ -203,7 +203,7 @@ export default function ClientDialog({ trigger, client, open: controlledOpen, on
                                     <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
                                     <Input
                                         placeholder="+52 000..."
-                                        className="h-12 pl-12 rounded-2xl border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-indigo-500/20"
+                                        className="h-12 pl-12 rounded-2xl border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-indigo-500/20 text-slate-900 dark:bg-slate-50/50 dark:text-slate-900"
                                         value={formData.phone}
                                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                                     />
@@ -220,7 +220,7 @@ export default function ClientDialog({ trigger, client, open: controlledOpen, on
                                     <Input
                                         type="number"
                                         placeholder="Ej. 5000"
-                                        className="h-12 pl-12 rounded-2xl border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-amber-500/20"
+                                        className="h-12 pl-12 rounded-2xl border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-amber-500/20 text-slate-900 dark:bg-slate-50/50 dark:text-slate-900"
                                         value={formData.budget}
                                         onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
                                     />
@@ -231,7 +231,7 @@ export default function ClientDialog({ trigger, client, open: controlledOpen, on
                                 <div className="relative">
                                     <Share2 className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 z-10" />
                                     <select
-                                        className="w-full h-12 pl-12 pr-4 rounded-2xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-emerald-500/20 text-sm font-bold text-slate-600 outline-none appearance-none transition-all"
+                                        className="w-full h-12 pl-12 pr-4 rounded-2xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-emerald-500/20 text-sm font-bold text-slate-900 outline-none appearance-none transition-all dark:bg-slate-50/50 dark:text-slate-900"
                                         value={formData.source}
                                         onChange={(e) => setFormData({ ...formData, source: e.target.value as any })}
                                     >
