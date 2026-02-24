@@ -30,6 +30,7 @@ import { where } from 'firebase/firestore';
 import { toast } from 'sonner';
 import ClientDialog from './ClientDialog';
 import ActivityDialog from './ActivityDialog';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import CreateProjectDialog from '../projects/CreateProjectDialog';
 import {
     DropdownMenu,
@@ -41,6 +42,8 @@ import {
 export default function ClientDetailPage() {
     const { id } = useParams<{ id: string }>();
     const [showIndicator, setShowIndicator] = useState(true);
+    const [deleteActivityId, setDeleteActivityId] = useState<string | null>(null);
+    const [isDeletingActivity, setIsDeletingActivity] = useState(false);
 
     const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
         if (e.currentTarget.scrollTop > 10) setShowIndicator(false);
@@ -316,16 +319,7 @@ export default function ClientDetailPage() {
                                                                     />
                                                                     <DropdownMenuItem
                                                                         className="rounded-xl font-bold py-3 px-4 cursor-pointer gap-3 text-rose-600 focus:text-rose-600 focus:bg-rose-50"
-                                                                        onClick={async () => {
-                                                                            if (confirm('¿Estás seguro de eliminar esta actividad?')) {
-                                                                                try {
-                                                                                    await deleteMutation.mutateAsync(activity.id);
-                                                                                    toast.success('Actividad eliminada');
-                                                                                } catch (error) {
-                                                                                    toast.error('Error al eliminar');
-                                                                                }
-                                                                            }
-                                                                        }}
+                                                                        onClick={() => setDeleteActivityId(activity.id)}
                                                                     >
                                                                         <Trash2 className="h-4 w-4" /> Eliminar
                                                                     </DropdownMenuItem>
@@ -427,6 +421,27 @@ export default function ClientDetailPage() {
                     </Card>
                 </div>
             </div>
+
+            <ConfirmDialog
+                isOpen={!!deleteActivityId}
+                onClose={() => setDeleteActivityId(null)}
+                onConfirm={async () => {
+                    if (!deleteActivityId) return;
+                    setIsDeletingActivity(true);
+                    try {
+                        await deleteMutation.mutateAsync(deleteActivityId);
+                        toast.success('Actividad eliminada');
+                        setDeleteActivityId(null);
+                    } catch (error) {
+                        toast.error('Error al eliminar');
+                    } finally {
+                        setIsDeletingActivity(false);
+                    }
+                }}
+                title="Eliminar Actividad"
+                description="¿Estás seguro de que deseas eliminar esta actividad? Esta acción no se puede deshacer."
+                isLoading={isDeletingActivity}
+            />
         </div>
     );
 }
