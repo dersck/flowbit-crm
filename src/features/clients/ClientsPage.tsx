@@ -38,6 +38,14 @@ import CreateClientDialog from './ClientDialog';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import FilterSidebar from './FilterSidebar';
 import PipelineView from '@/features/clients/PipelineView';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+    DropdownMenuSeparator,
+    DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
 
 const STAGE_CONFIG = {
     nuevo: { label: 'Nuevo Lead', color: 'bg-blue-100 text-blue-700 border-blue-200', icon: UserPlus },
@@ -82,7 +90,6 @@ export default function ClientsPage() {
         minBudget: '',
         maxBudget: '',
     });
-    const [activeMenu, setActiveMenu] = useState<string | null>(null);
     const [deleteId, setDeleteId] = useState<string | null>(null);
 
     const filteredClients = useMemo(() => {
@@ -124,7 +131,6 @@ export default function ClientsPage() {
     };
 
     const handleUpdateStage = async (id: string, stage: Client['stage']) => {
-        setActiveMenu(null);
         try {
             await updateMutation.mutateAsync({
                 id,
@@ -137,7 +143,6 @@ export default function ClientsPage() {
     };
 
     const handleToggleWhatsApp = async (client: Client) => {
-        setActiveMenu(null);
         const newState = !client.contact.noWhatsApp;
         try {
             await updateMutation.mutateAsync({
@@ -236,10 +241,7 @@ export default function ClientsPage() {
                         return (
                             <Card
                                 key={client.id}
-                                className={cn(
-                                    "group relative hover:shadow-[0_20px_50px_rgba(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-500 border-none bg-white rounded-[3rem] overflow-visible shadow-xl shadow-slate-200/40 flex flex-col h-[520px]",
-                                    activeMenu === client.id && "z-50 shadow-2xl"
-                                )}
+                                className="group relative hover:shadow-[0_20px_50px_rgba(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-500 border-none bg-white rounded-[3rem] overflow-visible shadow-xl shadow-slate-200/40 flex flex-col h-[520px]"
                             >
                                 <CardContent className="p-0 flex flex-col h-full">
                                     <div className="p-8 flex-1">
@@ -341,67 +343,50 @@ export default function ClientsPage() {
                                             <Trash2 className="h-5 w-5" />
                                         </Button>
 
-                                        <div className="relative">
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className={cn(
-                                                    "h-12 w-12 text-slate-300 hover:text-slate-900 hover:bg-slate-100 rounded-2xl transition-all",
-                                                    activeMenu === client.id && "bg-slate-100 text-slate-900"
-                                                )}
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setActiveMenu(activeMenu === client.id ? null : client.id);
-                                                }}
-                                            >
-                                                <MoreVertical className="h-5 w-5" />
-                                            </Button>
-
-                                            {activeMenu === client.id && (
-                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 w-64 bg-white rounded-3xl shadow-2xl border border-slate-100 p-3 z-50 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest p-3 pb-2 text-center">Mover a etapa</p>
-                                                    <div className="space-y-1">
-                                                        {(Object.entries(STAGE_CONFIG) as [Client['stage'], any][]).map(([key, cfg]) => (
-                                                            <button
-                                                                key={key}
-                                                                type="button"
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    handleUpdateStage(client.id, key);
-                                                                }}
-                                                                className={cn(
-                                                                    "w-full flex items-center gap-3 p-3 rounded-2xl text-[11px] font-bold transition-all hover:bg-slate-50 text-left",
-                                                                    client.stage === key ? "text-slate-900 bg-slate-50/50" : "text-slate-500"
-                                                                )}
-                                                            >
-                                                                <cfg.icon className={cn("h-4 w-4", client.stage === key ? "text-slate-900" : "text-slate-400")} />
-                                                                {cfg.label}
-                                                            </button>
-                                                        ))}
-                                                        <div className="pt-2 mt-2 border-t border-slate-100">
-                                                            <button
-                                                                type="button"
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    handleToggleWhatsApp(client);
-                                                                }}
-                                                                className={cn(
-                                                                    "w-full flex items-center gap-3 p-3 rounded-2xl text-[11px] font-bold transition-all text-left",
-                                                                    client.contact.noWhatsApp ? "text-emerald-600 hover:bg-emerald-50" : "text-amber-600 hover:bg-amber-50"
-                                                                )}
-                                                            >
-                                                                {client.contact.noWhatsApp ? (
-                                                                    <MessageSquare className="h-4 w-4" />
-                                                                ) : (
-                                                                    <MessageSquareOff className="h-4 w-4" />
-                                                                )}
-                                                                {client.contact.noWhatsApp ? 'Tiene WhatsApp' : 'No tiene WhatsApp'}
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-12 w-12 text-slate-300 hover:text-slate-900 hover:bg-slate-100 rounded-2xl transition-all"
+                                                >
+                                                    <MoreVertical className="h-5 w-5" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="center" className="w-64">
+                                                <DropdownMenuLabel className="text-[10px] font-black text-slate-400 uppercase tracking-widest p-3 pb-2 text-center">
+                                                    Mover a etapa
+                                                </DropdownMenuLabel>
+                                                {(Object.entries(STAGE_CONFIG) as [Client['stage'], any][]).map(([key, cfg]) => (
+                                                    <DropdownMenuItem
+                                                        key={key}
+                                                        onClick={() => handleUpdateStage(client.id, key)}
+                                                        className={cn(
+                                                            "gap-3",
+                                                            client.stage === key ? "text-slate-900 bg-slate-50/50" : "text-slate-500"
+                                                        )}
+                                                    >
+                                                        <cfg.icon className={cn("h-4 w-4", client.stage === key ? "text-slate-900" : "text-slate-400")} />
+                                                        {cfg.label}
+                                                    </DropdownMenuItem>
+                                                ))}
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem
+                                                    className={cn(
+                                                        "gap-3",
+                                                        client.contact.noWhatsApp ? "text-emerald-600 hover:bg-emerald-50" : "text-amber-600 hover:bg-amber-50"
+                                                    )}
+                                                    onClick={() => handleToggleWhatsApp(client)}
+                                                >
+                                                    {client.contact.noWhatsApp ? (
+                                                        <MessageSquare className="h-4 w-4" />
+                                                    ) : (
+                                                        <MessageSquareOff className="h-4 w-4" />
+                                                    )}
+                                                    {client.contact.noWhatsApp ? 'Tiene WhatsApp' : 'No tiene WhatsApp'}
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
 
                                         {client.contact.phone && (
                                             client.contact.noWhatsApp ? (
@@ -457,8 +442,6 @@ export default function ClientsPage() {
                 filters={filters}
                 setFilters={setFilters}
             />
-
-            {activeMenu && <div className="fixed inset-0 z-40 bg-transparent" onClick={() => setActiveMenu(null)} />}
 
             <ConfirmDialog
                 isOpen={!!deleteId}
