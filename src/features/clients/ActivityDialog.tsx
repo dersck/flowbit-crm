@@ -141,9 +141,11 @@ export default function ActivityDialog({ clientId, clientName = 'Cliente', trigg
                                     type="button"
                                     onClick={() => setFormData({ ...formData, type: type.id })}
                                     className={cn(
-                                        "flex flex-col items-center justify-center gap-2 p-4 rounded-3xl border-2 transition-all",
+                                        "flex flex-col items-center justify-center gap-2 p-4 rounded-3xl border-2 transition-all outline-none",
                                         formData.type === type.id
-                                            ? cn("border-slate-900 bg-slate-50", type.textColor)
+                                            ? cn("bg-slate-50", type.textColor, type.id === 'note' ? "border-slate-900" :
+                                                type.id === 'call' ? "border-indigo-600" :
+                                                    type.id === 'email' ? "border-blue-600" : "border-emerald-600")
                                             : "border-slate-50 bg-white text-slate-400 hover:border-slate-200"
                                     )}
                                 >

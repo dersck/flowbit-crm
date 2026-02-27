@@ -3,7 +3,6 @@ import { useWorkspaceQuery, useWorkspaceMutation } from '@/hooks/useFirestore';
 import type { Task } from '@/types';
 import { Button } from '@/components/ui/button';
 import {
-    Plus,
     Inbox,
     Star,
     Calendar,
@@ -17,6 +16,8 @@ import { cn } from '@/lib/utils';
 import { isToday, isPast } from 'date-fns';
 import { toast } from 'sonner';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
+
+import TaskDialog from './TaskDialog';
 
 type TaskFilter = 'inbox' | 'today' | 'upcoming' | 'done';
 
@@ -117,10 +118,7 @@ export default function TasksPage() {
                             {filteredTasks?.length || 0} tareas encontradas
                         </p>
                     </div>
-                    <Button size="lg" className="rounded-2xl shadow-xl shadow-emerald-100 flex gap-2 font-bold px-8 bg-emerald-600 hover:bg-emerald-700">
-                        <Plus className="h-5 w-5" />
-                        Nueva Tarea
-                    </Button>
+                    <TaskDialog />
                 </div>
 
                 <div className="space-y-3">
