@@ -32,6 +32,7 @@ import ClientDialog from './ClientDialog';
 import ActivityDialog from './ActivityDialog';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import CreateProjectDialog from '../projects/CreateProjectDialog';
+import TaskDialog from '../tasks/TaskDialog';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -110,15 +111,35 @@ export default function ClientDetailPage() {
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="rounded-2xl p-2 border-slate-100 shadow-xl">
-                            <DropdownMenuItem className="rounded-xl font-bold py-3 px-4 cursor-pointer gap-3">
-                                <Mail className="h-4 w-4 text-emerald-600" /> Enviar Email
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="rounded-xl font-bold py-3 px-4 cursor-pointer gap-3">
-                                <Phone className="h-4 w-4 text-indigo-600" /> Registrar Llamada
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="rounded-xl font-bold py-3 px-4 cursor-pointer gap-3">
-                                <Plus className="h-4 w-4 text-slate-600" /> Nueva Tarea
-                            </DropdownMenuItem>
+                            <ActivityDialog
+                                clientId={id!}
+                                clientName={client.name}
+                                defaultType="email"
+                                email={client.contact.email}
+                                trigger={
+                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="rounded-xl font-bold py-3 px-4 cursor-pointer gap-3">
+                                        <Mail className="h-4 w-4 text-emerald-600" /> Enviar Email
+                                    </DropdownMenuItem>
+                                }
+                            />
+                            <ActivityDialog
+                                clientId={id!}
+                                clientName={client.name}
+                                defaultType="call"
+                                trigger={
+                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="rounded-xl font-bold py-3 px-4 cursor-pointer gap-3">
+                                        <Phone className="h-4 w-4 text-indigo-600" /> Registrar Llamada
+                                    </DropdownMenuItem>
+                                }
+                            />
+                            <TaskDialog
+                                clientId={id!}
+                                trigger={
+                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="rounded-xl font-bold py-3 px-4 cursor-pointer gap-3">
+                                        <Plus className="h-4 w-4 text-slate-600" /> Nueva Tarea
+                                    </DropdownMenuItem>
+                                }
+                            />
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>
