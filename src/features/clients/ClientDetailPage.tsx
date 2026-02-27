@@ -11,7 +11,6 @@ import {
     Phone,
     Calendar,
     Briefcase,
-    CheckCircle2,
     Plus,
     Clock,
     MessageSquare,
@@ -285,8 +284,8 @@ export default function ClientDetailPage() {
                 </CardContent>
             </Card>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
+                <div className="lg:col-span-2 flex flex-col space-y-6">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <div className="h-8 w-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500">
@@ -298,10 +297,10 @@ export default function ClientDetailPage() {
                     </div>
 
                     {/* Contenedor con Scroll e Historia */}
-                    <div className="bg-white rounded-[2.5rem] border border-slate-100 p-2 shadow-sm relative overflow-hidden">
+                    <div className="bg-white rounded-[2.5rem] border border-slate-100 p-2 shadow-sm relative overflow-hidden h-[450px] flex flex-col">
                         <div
                             onScroll={handleScroll}
-                            className="max-h-[400px] overflow-y-auto p-6 space-y-1 relative scrollbar-hide pb-16"
+                            className="flex-1 overflow-y-auto p-6 space-y-1 relative scrollbar-hide"
                         >
                             {/* Línea vertical de fondo */}
                             <div className="absolute left-[39px] top-10 bottom-10 w-px bg-slate-50" />
@@ -422,7 +421,7 @@ export default function ClientDetailPage() {
                 </div>
 
                 {/* Sidebar: Linked Entities */}
-                <div className="space-y-8">
+                <div className="flex flex-col space-y-8 h-[450px] mt-[56px]">
                     {/* Projects Section */}
                     <Card className="border-slate-200 rounded-[2.5rem] shadow-xl shadow-slate-100 overflow-hidden bg-white">
                         <CardHeader className="bg-slate-50/50 p-6 border-b border-slate-100 flex flex-row items-center justify-between">
@@ -461,7 +460,7 @@ export default function ClientDetailPage() {
                     </Card>
 
                     {/* Quick Tools */}
-                    <Card className="border-none bg-slate-900 rounded-[2.5rem] p-8 text-white shadow-2xl shadow-slate-300">
+                    <Card className="border-none bg-slate-900 rounded-[2.5rem] p-8 text-white shadow-2xl shadow-slate-300 mt-auto">
                         <h3 className="text-xl font-black mb-4 uppercase tracking-tight">Acciones</h3>
                         <div className="grid grid-cols-2 gap-3">
                             <ActivityDialog
