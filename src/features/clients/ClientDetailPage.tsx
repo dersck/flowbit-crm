@@ -21,7 +21,10 @@ import {
     Share2,
     ChevronDown,
     Edit2,
-    Trash2
+    Trash2,
+    Zap,
+    TrendingUp,
+    Timer
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -148,35 +151,36 @@ export default function ClientDetailPage() {
             {/* Main Info Card */}
             <Card className="border-none shadow-2xl shadow-slate-200/50 rounded-[2.5rem] overflow-hidden bg-white">
                 <CardContent className="p-10">
-                    <div className="flex flex-col lg:flex-row gap-12">
-                        {/* Profile Section */}
-                        <div className="lg:w-1/3 space-y-8">
-                            <div className="flex items-center gap-6">
-                                <div className="h-24 w-24 bg-emerald-50 rounded-[2rem] flex items-center justify-center text-emerald-600 font-black text-4xl border-2 border-emerald-100 shadow-inner">
-                                    {client.name.charAt(0)}
-                                </div>
-                                <div>
-                                    <div className={cn(
-                                        "px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest mb-2 inline-block border",
-                                        client.stage === 'nuevo' ? "bg-blue-100 text-blue-700 border-blue-200" :
-                                            client.stage === 'contactado' ? "bg-emerald-100 text-emerald-700 border-emerald-200" :
-                                                client.stage === 'negociacion' ? "bg-amber-100 text-amber-700 border-amber-200" :
-                                                    client.stage === 'ganado' ? "bg-slate-900 text-white border-slate-900 shadow-lg" :
-                                                        client.stage === 'perdido' ? "bg-rose-100 text-rose-700 border-rose-200" : "bg-slate-100 text-slate-600"
-                                    )}>
-                                        {client.stage}
-                                    </div>
-                                    <h1 className="text-4xl font-black text-slate-900 tracking-tight leading-none">{client.name}</h1>
-                                </div>
+                    <div className="space-y-10">
+                        {/* Top Profile Header */}
+                        <div className="flex items-center gap-8 pb-10 border-b border-slate-50">
+                            <div className="h-28 w-28 bg-emerald-50 rounded-[2.5rem] flex items-center justify-center text-emerald-600 font-black text-5xl border-2 border-emerald-100 shadow-inner shrink-0">
+                                {client.name.charAt(0)}
                             </div>
+                            <div>
+                                <div className={cn(
+                                    "px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest mb-3 inline-block border",
+                                    client.stage === 'nuevo' ? "bg-blue-100 text-blue-700 border-blue-200" :
+                                        client.stage === 'contactado' ? "bg-emerald-100 text-emerald-700 border-emerald-200" :
+                                            client.stage === 'negociacion' ? "bg-amber-100 text-amber-700 border-amber-200" :
+                                                client.stage === 'ganado' ? "bg-slate-900 text-white border-slate-900 shadow-lg" :
+                                                    client.stage === 'perdido' ? "bg-rose-100 text-rose-700 border-rose-200" : "bg-slate-100 text-slate-600"
+                                )}>
+                                    {client.stage}
+                                </div>
+                                <h1 className="text-5xl font-black text-slate-900 tracking-tight leading-none">{client.name}</h1>
+                            </div>
+                        </div>
 
-                            <div className="space-y-4 pt-4 border-t border-slate-50">
+                        <div className="flex flex-col lg:flex-row gap-12">
+                            {/* Left: Contact Info */}
+                            <div className="lg:w-1/3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-4 h-fit">
                                 {client.contact.email && (
                                     <div className="flex items-center gap-4 text-slate-500 font-bold group">
                                         <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center border border-slate-100 group-hover:bg-emerald-50 group-hover:text-emerald-600 transition-colors">
                                             <Mail className="h-5 w-5" />
                                         </div>
-                                        {client.contact.email}
+                                        <span className="truncate">{client.contact.email}</span>
                                     </div>
                                 )}
                                 {client.contact.phone && (
@@ -208,41 +212,74 @@ export default function ClientDetailPage() {
                                         <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center border border-slate-100 group-hover:bg-rose-50 group-hover:text-rose-600 transition-colors">
                                             <Share2 className="h-5 w-5" />
                                         </div>
-                                        Origen: <span className="capitalize">{client.source}</span>
+                                        {client.source}
                                     </div>
                                 )}
                                 <div className="flex items-center gap-4 text-slate-500 font-bold group">
                                     <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center border border-slate-100 group-hover:bg-amber-50 group-hover:text-amber-600 transition-colors">
                                         <Calendar className="h-5 w-5" />
                                     </div>
-                                    Registrado el {client.createdAt instanceof Date ? format(client.createdAt, 'dd MMMM, yyyy', { locale: es }) : 'Reciente'}
+                                    {client.createdAt instanceof Date ? format(client.createdAt, 'dd MMM, yyyy', { locale: es }) : 'Reciente'}
                                 </div>
                             </div>
-                        </div>
 
-                        {/* Summary Grid */}
-                        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <Card className="border-slate-100 bg-slate-50/30 rounded-3xl p-6 border-2">
-                                <div className="flex items-center gap-4 mb-4">
-                                    <div className="p-2.5 bg-indigo-600 rounded-xl shadow-lg shadow-indigo-100">
-                                        <Briefcase className="h-5 w-5 text-white" />
+                            {/* Right: Metrics Pulse */}
+                            <div className="flex-1 grid grid-cols-2 gap-4">
+                                <Card className="border-slate-100 bg-slate-50/20 rounded-3xl p-6 border-2 group hover:border-indigo-100 transition-all">
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <div className="p-2 bg-indigo-600 rounded-lg shadow-md shadow-indigo-100 group-hover:scale-110 transition-transform">
+                                            <Briefcase className="h-4 w-4 text-white" />
+                                        </div>
+                                        <h3 className="font-black text-slate-500 uppercase text-[9px] tracking-widest">Proyectos</h3>
                                     </div>
-                                    <h3 className="font-black text-slate-900 uppercase text-xs tracking-widest">Proyectos</h3>
-                                </div>
-                                <p className="text-4xl font-black text-slate-900">{projects?.length || 0}</p>
-                                <p className="text-xs font-bold text-slate-400 mt-2">Gestionando resultados</p>
-                            </Card>
+                                    <div className="flex items-baseline gap-2">
+                                        <p className="text-4xl font-black text-slate-900">{projects?.length || 0}</p>
+                                        <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-md">Activos</span>
+                                    </div>
+                                </Card>
 
-                            <Card className="border-slate-100 bg-slate-50/30 rounded-3xl p-6 border-2">
-                                <div className="flex items-center gap-4 mb-4">
-                                    <div className="p-2.5 bg-emerald-600 rounded-xl shadow-lg shadow-emerald-100">
-                                        <CheckCircle2 className="h-5 w-5 text-white" />
+                                <Card className="border-slate-100 bg-slate-50/20 rounded-3xl p-6 border-2 group hover:border-rose-100 transition-all">
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <div className="p-2 bg-rose-500 rounded-lg shadow-md shadow-rose-100 group-hover:scale-110 transition-transform">
+                                            <TrendingUp className="h-4 w-4 text-white" />
+                                        </div>
+                                        <h3 className="font-black text-slate-500 uppercase text-[9px] tracking-widest">Urgente</h3>
                                     </div>
-                                    <h3 className="font-black text-slate-900 uppercase text-xs tracking-widest">Tareas Pendientes</h3>
-                                </div>
-                                <p className="text-4xl font-black text-slate-900">{tasks?.filter(t => t.status !== 'done').length || 0}</p>
-                                <p className="text-xs font-bold text-slate-400 mt-2">Acciones próximas</p>
-                            </Card>
+                                    <div className="flex items-baseline gap-2">
+                                        <p className="text-4xl font-black text-slate-900">{tasks?.filter(t => t.priority === 3 && t.status !== 'done').length || 0}</p>
+                                        <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded-md">Prioridad Alta</span>
+                                    </div>
+                                </Card>
+
+                                <Card className="border-slate-100 bg-slate-50/20 rounded-3xl p-6 border-2 group hover:border-amber-100 transition-all">
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <div className="p-2 bg-amber-500 rounded-lg shadow-md shadow-amber-100 group-hover:scale-110 transition-transform">
+                                            <Zap className="h-4 w-4 text-white" />
+                                        </div>
+                                        <h3 className="font-black text-slate-500 uppercase text-[9px] tracking-widest">Inversión</h3>
+                                    </div>
+                                    <p className="text-3xl font-black text-slate-900 truncate">
+                                        {new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(client.budget || 0)}
+                                    </p>
+                                </Card>
+
+                                <Card className="border-slate-100 bg-slate-50/20 rounded-3xl p-6 border-2 group hover:border-emerald-100 transition-all">
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <div className="p-2 bg-emerald-500 rounded-lg shadow-md shadow-emerald-100 group-hover:scale-110 transition-transform">
+                                            <Timer className="h-4 w-4 text-white" />
+                                        </div>
+                                        <h3 className="font-black text-slate-500 uppercase text-[9px] tracking-widest">Ritmo</h3>
+                                    </div>
+                                    <div className="flex items-baseline gap-2">
+                                        <p className="text-4xl font-black text-slate-900">
+                                            {activities && activities.length > 0 ?
+                                                Math.floor((new Date().getTime() - (activities[0].date as Date).getTime()) / (1000 * 60 * 60 * 24)) : 0
+                                            }
+                                        </p>
+                                        <span className="text-[10px] font-bold text-slate-400">días sin contacto</span>
+                                    </div>
+                                </Card>
+                            </div>
                         </div>
                     </div>
                 </CardContent>
@@ -396,12 +433,24 @@ export default function ClientDetailPage() {
                             {projects && projects.length > 0 ? (
                                 projects.map(project => (
                                     <Link key={project.id} to={`/projects/${project.id}`} className="block p-4 rounded-2xl hover:bg-slate-50 transition-colors group">
-                                        <div className="flex items-center justify-between">
+                                        <div className="flex items-center justify-between mb-2">
                                             <h4 className="font-bold text-slate-700 group-hover:text-emerald-600 transition-colors">{project.name}</h4>
                                             <div className={cn(
                                                 "h-2 w-2 rounded-full",
-                                                project.status === 'active' ? "bg-emerald-500" : "bg-slate-300"
+                                                project.status === 'active' ? "bg-emerald-500 animate-pulse" : "bg-slate-300"
                                             )} />
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <div className="flex justify-between items-center text-[10px] font-black uppercase text-slate-400">
+                                                <span>Progreso</span>
+                                                <span className="text-slate-600">65%</span>
+                                            </div>
+                                            <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                                                <div
+                                                    className="h-full bg-emerald-500 rounded-full transition-all duration-1000 group-hover:bg-emerald-600"
+                                                    style={{ width: '65%' }}
+                                                />
+                                            </div>
                                         </div>
                                     </Link>
                                 ))
