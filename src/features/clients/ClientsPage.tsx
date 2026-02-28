@@ -172,7 +172,7 @@ export default function ClientsPage() {
         <div className="space-y-10 max-w-7xl mx-auto pb-20">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-8">
                 <div>
-                    <h1 className="text-5xl font-black text-slate-900 tracking-tighter">Clientes</h1>
+                    <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Clientes</h1>
                     <p className="text-slate-500 font-bold text-lg mt-1 opacity-80">Gestiona tu embudo de ventas y prospectos de WhatsApp.</p>
                 </div>
                 <CreateClientDialog />

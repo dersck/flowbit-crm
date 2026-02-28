@@ -167,7 +167,7 @@ export default function ClientDetailPage() {
                                 )}>
                                     {client.stage}
                                 </div>
-                                <h1 className="text-5xl font-black text-slate-900 tracking-tight leading-none">{client.name}</h1>
+                                <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight leading-none">{client.name}</h1>
                             </div>
                         </div>
 
