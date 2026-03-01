@@ -59,30 +59,30 @@ export default function ConfirmDialog({
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-[450px] border-none rounded-[3rem] p-12 bg-white shadow-[0_32px_64px_rgba(0,0,0,0.15)] overflow-hidden">
-                <DialogHeader className="space-y-8">
+            <DialogContent className="overflow-hidden rounded-[2.5rem] border-none bg-white p-8 shadow-[0_32px_64px_rgba(0,0,0,0.15)] sm:max-w-[450px] sm:p-10">
+                <DialogHeader className="space-y-6">
                     <div className={cn(
-                        "h-24 w-24 rounded-[2rem] flex items-center justify-center mx-auto transition-all duration-700 group-hover:rotate-12",
+                        "mx-auto flex h-20 w-20 items-center justify-center rounded-[1.75rem] transition-all duration-700 group-hover:rotate-12 sm:h-24 sm:w-24 sm:rounded-[2rem]",
                         config.iconBg
                     )}>
-                        <Icon className={cn("h-12 w-12 transition-transform duration-500", config.iconColor)} />
+                        <Icon className={cn("h-10 w-10 transition-transform duration-500 sm:h-12 sm:w-12", config.iconColor)} />
                     </div>
-                    <div className="text-center space-y-4">
-                        <DialogTitle className="text-3xl font-black text-slate-900 tracking-tight leading-tight">
+                    <div className="space-y-3 text-center">
+                        <DialogTitle className="text-[clamp(1.6rem,2.4vw,2rem)] font-black leading-tight tracking-tight text-slate-900">
                             {title}
                         </DialogTitle>
-                        <DialogDescription className="text-slate-500 font-bold text-lg leading-relaxed opacity-80 px-4">
+                        <DialogDescription className="px-2 text-sm font-bold leading-relaxed text-slate-500 opacity-80 sm:px-4 sm:text-base">
                             {description}
                         </DialogDescription>
                     </div>
                 </DialogHeader>
 
-                <DialogFooter className="mt-10 flex flex-col gap-3 sm:flex-col sm:space-x-0">
+                <DialogFooter className="mt-8 flex flex-col gap-3 sm:flex-col sm:space-x-0">
                     <Button
                         type="button"
                         disabled={isLoading}
                         className={cn(
-                            "w-full h-14 rounded-2xl text-white font-black text-base shadow-xl transition-all transform active:scale-95 flex items-center justify-center gap-2 order-1",
+                            "order-1 flex h-12 w-full items-center justify-center gap-2 rounded-2xl text-base font-black text-white shadow-xl transition-all transform active:scale-95 sm:h-[3.25rem]",
                             config.buttonBg
                         )}
                         onClick={onConfirm}
@@ -96,7 +96,7 @@ export default function ConfirmDialog({
                     <Button
                         type="button"
                         variant="ghost"
-                        className="w-full h-12 rounded-2xl font-bold text-slate-400 hover:text-slate-900 hover:bg-slate-50 transition-all text-sm order-2"
+                        className="order-2 h-11 w-full rounded-2xl text-sm font-bold text-slate-400 transition-all hover:bg-slate-50 hover:text-slate-900"
                         onClick={onClose}
                         disabled={isLoading}
                     >

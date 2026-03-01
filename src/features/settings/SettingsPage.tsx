@@ -1,201 +1,319 @@
-import { useState } from 'react';
+import { useState, type ComponentType } from 'react';
 import { useAuth } from '@/features/auth/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { EmptyState } from '@/components/ui/empty-state';
+import { FieldGroup } from '@/components/ui/form-field';
+import { PageHeader } from '@/components/ui/page-header';
+import { Surface } from '@/components/ui/surface';
 import {
-    User,
-    Settings,
+    Bell,
+    ChevronRight,
     Cloud,
+    CreditCard,
     Database,
     Download,
-    Upload,
+    Map,
+    Settings,
     Shield,
-    Bell,
-    CreditCard,
-    ChevronRight,
-    Map
+    Upload,
+    User,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
+type SettingsTab = 'profile' | 'workspace' | 'backups' | 'notifications';
+
+const tabs: Array<{
+    id: SettingsTab
+    label: string
+    icon: ComponentType<{ className?: string }>
+}> = [
+    { id: 'profile', label: 'Mi Perfil', icon: User },
+    { id: 'workspace', label: 'Workspace', icon: Settings },
+    { id: 'backups', label: 'Respaldos', icon: Database },
+    { id: 'notifications', label: 'Notificaciones', icon: Bell },
+];
+
 export default function SettingsPage() {
     const { appUser } = useAuth();
-    const [activeTab, setActiveTab] = useState<'profile' | 'workspace' | 'backups' | 'notifications'>('profile');
+    const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
 
     return (
-        <div className="max-w-6xl mx-auto space-y-10 pb-20">
-            <div>
-                <h1 className="text-4xl font-black text-slate-900 tracking-tighter">Configuración</h1>
-                <p className="text-slate-500 font-medium mt-1">Gestiona tu perfil, workspace y seguridad de datos.</p>
-            </div>
+        <div className="mx-auto max-w-6xl space-y-8 pb-16">
+            <PageHeader
+                title="Configuracion"
+                subtitle="Gestiona tu perfil, workspace y seguridad de datos."
+                eyebrow="Workspace Control"
+                icon={(
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900 text-white shadow-lg">
+                        <Settings className="h-4 w-4" />
+                    </div>
+                )}
+            />
 
-            <div className="flex flex-col lg:flex-row gap-10">
-                {/* Navigation Sidebar */}
-                <aside className="w-full lg:w-64 space-y-2">
-                    <NavButton
-                        icon={User}
-                        label="Mi Perfil"
-                        active={activeTab === 'profile'}
-                        onClick={() => setActiveTab('profile')}
-                    />
-                    <NavButton
-                        icon={Settings}
-                        label="Workspace"
-                        active={activeTab === 'workspace'}
-                        onClick={() => setActiveTab('workspace')}
-                    />
-                    <NavButton
-                        icon={Database}
-                        label="Respaldos"
-                        active={activeTab === 'backups'}
-                        onClick={() => setActiveTab('backups')}
-                    />
-                    <NavButton
-                        icon={Bell}
-                        label="Notificaciones"
-                        active={activeTab === 'notifications'}
-                        onClick={() => setActiveTab('notifications')}
-                    />
-                </aside>
+            <div className="flex flex-col gap-8 lg:flex-row">
+                <Surface variant="premiumBordered" className="w-full rounded-[2rem] p-3 lg:w-72 lg:self-start">
+                    <div className="space-y-2">
+                        {tabs.map((tab) => (
+                            <SettingsNavButton
+                                key={tab.id}
+                                icon={tab.icon}
+                                label={tab.label}
+                                active={activeTab === tab.id}
+                                onClick={() => setActiveTab(tab.id)}
+                            />
+                        ))}
+                    </div>
+                </Surface>
 
-                {/* Main Content Area */}
-                <main className="flex-1 space-y-8">
-                    {activeTab === 'profile' && (
-                        <Card className="border-none shadow-2xl shadow-slate-200/50 rounded-[2.5rem] bg-white overflow-hidden">
-                            <CardHeader className="p-10 border-b border-slate-50">
-                                <CardTitle className="text-2xl font-black">Información Personal</CardTitle>
-                                <CardDescription className="text-slate-400 font-bold">Actualiza tu información pública y de contacto.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="p-10 space-y-8">
-                                <div className="flex items-center gap-8">
-                                    <div className="h-24 w-24 bg-slate-900 rounded-[2rem] flex items-center justify-center text-white text-3xl font-black shadow-xl">
+                <main className="flex-1 space-y-6">
+                    {activeTab === 'profile' ? (
+                        <Surface className="overflow-hidden rounded-[2.5rem] shadow-2xl shadow-slate-200/50">
+                            <div className="border-b border-slate-50 p-8">
+                                <h2 className="text-xl font-black text-slate-900 sm:text-2xl">Informacion Personal</h2>
+                                <p className="mt-1 font-bold text-slate-400">
+                                    Actualiza tu informacion publica y de contacto.
+                                </p>
+                            </div>
+
+                            <div className="space-y-6 p-8">
+                                <div className="flex items-center gap-6">
+                                    <div className="flex h-20 w-20 items-center justify-center rounded-[1.75rem] bg-slate-900 text-[1.65rem] font-black text-white shadow-xl">
                                         {appUser?.displayName?.charAt(0) || '?'}
                                     </div>
-                                    <Button variant="outline" className="rounded-xl border-slate-200 font-bold px-6">Cambiar Foto</Button>
+                                    <Button variant="outline" className="h-11 rounded-2xl px-5 font-bold">
+                                        Cambiar Foto
+                                    </Button>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Nombre Completo</label>
-                                        <Input defaultValue={appUser?.displayName} className="h-12 rounded-2xl border-slate-200 px-5 focus:ring-slate-900/10" />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Email</label>
-                                        <Input disabled defaultValue={appUser?.email} className="h-12 rounded-2xl border-slate-200 px-5 bg-slate-50" />
-                                    </div>
+                                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                    <FieldGroup label="Nombre Completo">
+                                        <Input
+                                            defaultValue={appUser?.displayName}
+                                            className="h-12 px-5"
+                                        />
+                                    </FieldGroup>
+                                    <FieldGroup label="Email">
+                                        <Input
+                                            disabled
+                                            defaultValue={appUser?.email}
+                                            className="h-12 bg-slate-50 px-5"
+                                        />
+                                    </FieldGroup>
                                 </div>
 
-                                <div className="pt-4 border-t border-slate-50 flex justify-end">
-                                    <Button className="h-12 rounded-2xl bg-slate-900 text-white font-black px-10 shadow-lg" onClick={() => toast.success('Perfil actualizado')}>
+                                <div className="flex justify-end border-t border-slate-50 pt-4">
+                                    <Button
+                                        variant="pagePrimary"
+                                        size="lg"
+                                        className="px-8"
+                                        onClick={() => toast.success('Perfil actualizado')}
+                                    >
                                         Guardar Cambios
                                     </Button>
                                 </div>
-                            </CardContent>
-                        </Card>
-                    )}
+                            </div>
+                        </Surface>
+                    ) : null}
 
-                    {activeTab === 'backups' && (
-                        <div className="space-y-8">
-                            <Card className="border-none shadow-2xl shadow-slate-200/50 rounded-[2.5rem] bg-white overflow-hidden">
-                                <CardHeader className="p-10 border-b border-slate-50">
-                                    <div className="flex items-center gap-4 mb-2">
-                                        <div className="p-3 bg-emerald-600 rounded-2xl shadow-lg shadow-emerald-100">
-                                            <Cloud className="h-6 w-6 text-white" />
+                    {activeTab === 'backups' ? (
+                        <div className="space-y-6">
+                            <Surface className="overflow-hidden rounded-[2.5rem] shadow-2xl shadow-slate-200/50">
+                                <div className="border-b border-slate-50 p-8">
+                                    <div className="mb-2 flex items-center gap-3">
+                                        <div className="rounded-2xl bg-emerald-600 p-2.5 shadow-lg shadow-emerald-100">
+                                            <Cloud className="h-5 w-5 text-white" />
                                         </div>
-                                        <CardTitle className="text-2xl font-black">Nube y Seguridad</CardTitle>
+                                        <h2 className="text-xl font-black text-slate-900 sm:text-2xl">Nube y Seguridad</h2>
                                     </div>
-                                    <CardDescription className="text-slate-400 font-bold">Configura tus respaldos automáticos en Google Drive.</CardDescription>
-                                </CardHeader>
-                                <CardContent className="p-10 space-y-8">
-                                    <div className="flex items-center justify-between p-6 rounded-3xl bg-slate-50 border border-slate-100">
-                                        <div className="flex items-center gap-6">
-                                            <div className="h-12 w-12 bg-white rounded-2xl flex items-center justify-center shadow-sm">
-                                                <Map className="h-6 w-6 text-emerald-600" />
+                                    <p className="font-bold text-slate-400">
+                                        Configura tus respaldos automaticos en Google Drive.
+                                    </p>
+                                </div>
+
+                                <div className="space-y-6 p-8">
+                                    <Surface
+                                        variant="premiumBordered"
+                                        className="flex items-center justify-between rounded-3xl border border-slate-100 bg-slate-50 p-5 shadow-none"
+                                    >
+                                        <div className="flex items-center gap-5">
+                                            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-sm">
+                                                <Map className="h-5 w-5 text-emerald-600" />
                                             </div>
                                             <div>
                                                 <p className="font-bold text-slate-900">Google Drive Disconnect</p>
-                                                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-0.5">Estado: Desconectado</p>
+                                                <p className="mt-0.5 text-xs font-bold uppercase tracking-widest text-slate-400">
+                                                    Estado: Desconectado
+                                                </p>
                                             </div>
                                         </div>
-                                        <Button className="rounded-xl bg-slate-900 text-white font-bold h-11 px-6">Conectar</Button>
-                                    </div>
+                                        <Button variant="pagePrimary" className="h-11 px-5 font-bold">
+                                            Conectar
+                                        </Button>
+                                    </Surface>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="p-8 rounded-[2rem] border-2 border-dashed border-slate-200 hover:border-emerald-500/30 transition-colors group">
-                                            <div className="h-12 w-12 bg-emerald-50 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                                                <Download className="h-6 w-6 text-emerald-600" />
-                                            </div>
-                                            <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight mb-2">Exportar Todo</h3>
-                                            <p className="text-sm font-medium text-slate-400 leading-relaxed mb-6">Descarga un archivo JSON con toda la información de tu CRM (Contactos, Proyectos, Tareas).</p>
-                                            <Button variant="outline" className="w-full h-12 rounded-2xl border-slate-200 font-bold hover:bg-emerald-50 transform active:scale-95 transition-all">Generar Backup</Button>
-                                        </div>
-
-                                        <div className="p-8 rounded-[2rem] border-2 border-dashed border-slate-200 hover:border-amber-500/30 transition-colors group">
-                                            <div className="h-12 w-12 bg-amber-50 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                                                <Upload className="h-6 w-6 text-amber-600" />
-                                            </div>
-                                            <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight mb-2">Restaurar Info</h3>
-                                            <p className="text-sm font-medium text-slate-400 leading-relaxed mb-6">Importa un archivo de respaldo previo para recuperar tu información. Sobrescribirá los datos actuales.</p>
-                                            <Button variant="outline" className="w-full h-12 rounded-2xl border-slate-200 font-bold hover:bg-amber-50 transform active:scale-95 transition-all text-amber-600 border-amber-100">Cargar Archivo</Button>
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-
-                            <div className="p-8 bg-slate-900 rounded-[2.5rem] text-white flex items-center justify-between shadow-2xl shadow-slate-400">
-                                <div className="flex items-center gap-6">
-                                    <div className="h-14 w-14 bg-white/10 rounded-2xl flex items-center justify-center border border-white/10">
-                                        <Shield className="h-7 w-7 text-emerald-400" />
-                                    </div>
-                                    <div>
-                                        <p className="text-xl font-black uppercase tracking-tight">Seguridad de Datos</p>
-                                        <p className="text-indigo-300 text-sm font-bold opacity-80">Toda tu información está cifrada y almacenada en infraestructuras nivel bancario.</p>
+                                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                        <BackupActionCard
+                                            icon={Download}
+                                            title="Exportar Todo"
+                                            description="Descarga un archivo JSON con toda la informacion de tu CRM."
+                                            tone="emerald"
+                                            actionLabel="Generar Backup"
+                                        />
+                                        <BackupActionCard
+                                            icon={Upload}
+                                            title="Restaurar Info"
+                                            description="Importa un respaldo previo para recuperar informacion."
+                                            tone="amber"
+                                            actionLabel="Cargar Archivo"
+                                        />
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-                    )}
+                            </Surface>
 
-                    {activeTab === 'workspace' && (
-                        <Card className="border-none shadow-2xl shadow-slate-200/50 rounded-[2.5rem] bg-white overflow-hidden">
-                            <CardHeader className="p-10 border-b border-slate-50">
-                                <CardTitle className="text-2xl font-black">Workspace</CardTitle>
-                                <CardDescription className="text-slate-400 font-bold">Personaliza tu espacio de trabajo colaborativo.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="p-10 space-y-6">
-                                <p className="text-slate-400 font-bold italic text-center py-20">Próximamente: Gestión de miembros, roles y planes.</p>
+                            <Surface variant="dark" className="flex items-center justify-between rounded-[2.5rem] p-6 shadow-2xl shadow-slate-400">
+                                <div className="flex items-center gap-5">
+                                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/10">
+                                        <Shield className="h-6 w-6 text-emerald-400" />
+                                    </div>
+                                    <div>
+                                        <p className="text-lg font-black uppercase tracking-tight sm:text-xl">Seguridad de Datos</p>
+                                        <p className="text-sm font-bold text-indigo-300 opacity-80">
+                                            Tu informacion esta cifrada y almacenada en infraestructura segura.
+                                        </p>
+                                    </div>
+                                </div>
+                            </Surface>
+                        </div>
+                    ) : null}
+
+                    {activeTab === 'workspace' ? (
+                        <Surface className="overflow-hidden rounded-[2.5rem] shadow-2xl shadow-slate-200/50">
+                            <div className="border-b border-slate-50 p-8">
+                                <h2 className="text-xl font-black text-slate-900 sm:text-2xl">Workspace</h2>
+                                <p className="mt-1 font-bold text-slate-400">
+                                    Personaliza tu espacio de trabajo colaborativo.
+                                </p>
+                            </div>
+                            <div className="space-y-6 p-8">
+                                <EmptyState
+                                    icon={CreditCard}
+                                    title="Proximamente"
+                                    description="Gestion de miembros, roles y planes en una sola vista."
+                                />
                                 <div className="flex justify-center">
-                                    <Button className="h-14 px-10 rounded-2xl bg-indigo-600 flex gap-3 font-black shadow-xl shadow-indigo-100">
+                                    <Button variant="tool" size="lg" className="gap-3 px-8">
                                         <CreditCard className="h-5 w-5" />
                                         Ver Planes Pro
                                     </Button>
                                 </div>
-                            </CardContent>
-                        </Card>
-                    )}
+                            </div>
+                        </Surface>
+                    ) : null}
+
+                    {activeTab === 'notifications' ? (
+                        <Surface className="overflow-hidden rounded-[2.5rem] shadow-2xl shadow-slate-200/50">
+                            <div className="border-b border-slate-50 p-8">
+                                <h2 className="text-xl font-black text-slate-900 sm:text-2xl">Notificaciones</h2>
+                                <p className="mt-1 font-bold text-slate-400">
+                                    Controla alertas, recordatorios y avisos del workspace.
+                                </p>
+                            </div>
+                            <div className="space-y-6 p-8">
+                                <EmptyState
+                                    icon={Bell}
+                                    title="Centro de alertas"
+                                    description="La configuracion avanzada de notificaciones estara disponible en una siguiente fase."
+                                />
+                                <div className="flex justify-center">
+                                    <Button variant="soft" size="lg">
+                                        Recordarme despues
+                                    </Button>
+                                </div>
+                            </div>
+                        </Surface>
+                    ) : null}
                 </main>
             </div>
         </div>
     );
 }
 
-function NavButton({ icon: Icon, label, active, onClick }: any) {
+function SettingsNavButton({
+    icon: Icon,
+    label,
+    active,
+    onClick,
+}: {
+    icon: ComponentType<{ className?: string }>
+    label: string
+    active: boolean
+    onClick: () => void
+}) {
     return (
-        <button
+        <Button
+            type="button"
+            variant="ghost"
             onClick={onClick}
             className={cn(
-                "w-full flex items-center justify-between px-6 py-4 rounded-2xl transition-all group",
+                'h-auto w-full justify-between rounded-2xl px-5 py-3.5 transition-all',
                 active
-                    ? "bg-slate-900 text-white shadow-xl shadow-slate-200 translate-x-2"
-                    : "text-slate-500 hover:bg-white hover:text-slate-900 border border-transparent hover:border-slate-100"
+                    ? 'translate-x-2 bg-slate-900 text-white shadow-xl shadow-slate-200 hover:bg-slate-900 hover:text-white'
+                    : 'border border-transparent text-slate-500 hover:border-slate-100 hover:bg-white hover:text-slate-900'
             )}
         >
             <div className="flex items-center gap-4">
-                <Icon className={cn("h-5 w-5", active ? "text-white" : "text-slate-400 group-hover:text-slate-900")} />
+                <Icon className={cn('h-5 w-5', active ? 'text-white' : 'text-slate-400')} />
                 <span className="font-bold tracking-tight">{label}</span>
             </div>
-            {active && <ChevronRight className="h-4 w-4" />}
-        </button>
+            {active ? <ChevronRight className="h-4 w-4" /> : null}
+        </Button>
+    );
+}
+
+function BackupActionCard({
+    icon: Icon,
+    title,
+    description,
+    tone,
+    actionLabel,
+}: {
+    icon: ComponentType<{ className?: string }>
+    title: string
+    description: string
+    tone: 'emerald' | 'amber'
+    actionLabel: string
+}) {
+    return (
+        <Surface
+            variant="dashed"
+            className={cn(
+                'group rounded-[2rem] border-slate-200 p-6 transition-colors',
+                tone === 'emerald' ? 'hover:border-emerald-500/30' : 'hover:border-amber-500/30'
+            )}
+        >
+            <div
+                className={cn(
+                    'mb-5 flex h-11 w-11 items-center justify-center rounded-2xl transition-transform group-hover:scale-110',
+                    tone === 'emerald' ? 'bg-emerald-50' : 'bg-amber-50'
+                )}
+            >
+                <Icon className={cn('h-5 w-5', tone === 'emerald' ? 'text-emerald-600' : 'text-amber-600')} />
+            </div>
+            <h3 className="mb-2 text-lg font-black uppercase tracking-tight text-slate-900 sm:text-xl">{title}</h3>
+            <p className="mb-5 text-sm font-medium leading-relaxed text-slate-400">{description}</p>
+            <Button
+                variant="outline"
+                className={cn(
+                    'h-11 w-full rounded-2xl font-bold',
+                    tone === 'emerald'
+                        ? 'hover:bg-emerald-50'
+                        : 'border-amber-100 text-amber-600 hover:bg-amber-50 hover:text-amber-600'
+                )}
+            >
+                {actionLabel}
+            </Button>
+        </Surface>
     );
 }
