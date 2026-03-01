@@ -1,25 +1,32 @@
-import { useParams, Link } from 'react-router-dom';
-import { useEntityQuery, useWorkspaceQuery, useWorkspaceMutation } from '@/hooks/useFirestore';
-import type { Project, Client, Task } from '@/types';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Link, useParams } from 'react-router-dom';
+import { where } from 'firebase/firestore';
+import { differenceInCalendarDays, format } from 'date-fns';
+import { es } from 'date-fns/locale';
 import {
-    ChevronLeft,
-    Calendar,
     Briefcase,
+    Calendar,
     CheckCircle2,
     Clock,
-    User,
+    Layout,
     Plus,
     Tag,
-    AlertCircle,
-    Layout
+    User,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
-import { where } from 'firebase/firestore';
 import { toast } from 'sonner';
+import PriorityBadge from '@/components/common/PriorityBadge';
+import StatCard from '@/components/common/StatCard';
+import { BackLink } from '@/components/ui/back-link';
+import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
+import { FieldGroup } from '@/components/ui/form-field';
+import { PageHeader } from '@/components/ui/page-header';
+import { SegmentedControl, SegmentedControlItem } from '@/components/ui/segmented-control';
+import { Surface } from '@/components/ui/surface';
+import { useEntityQuery, useWorkspaceMutation, useWorkspaceQuery } from '@/hooks/useFirestore';
+import { cn } from '@/lib/utils';
+import type { Client, Project, Task } from '@/types';
+import { PROJECT_STATUS_CONFIG, PROJECT_STATUS_ORDER } from './projectConstants';
+import TaskDialog from '../tasks/TaskDialog';
 
 export default function ProjectDetailPage() {
     const { id } = useParams<{ id: string }>();
@@ -27,11 +34,16 @@ export default function ProjectDetailPage() {
     const { data: project, isLoading: isProjectLoading } = useEntityQuery<Project>('projects', id);
     const { data: client } = useEntityQuery<Client>('clients', project?.clientId);
     const { data: tasks } = useWorkspaceQuery<Task>('tasks', 'project-tasks', [
-        where('projectId', '==', id)
+        where('projectId', '==', id),
     ]);
 
     const { updateMutation: updateTaskMutation } = useWorkspaceMutation('tasks');
     const { updateMutation: updateProjectMutation } = useWorkspaceMutation('projects');
+
+    const completedTasks = tasks?.filter((task) => task.status === 'done').length || 0;
+    const pendingTasks = tasks?.filter((task) => task.status !== 'done').length || 0;
+    const progress = tasks?.length ? Math.round((completedTasks / tasks.length) * 100) : 0;
+    const remainingDays = project?.dueDate ? differenceInCalendarDays(project.dueDate, new Date()) : null;
 
     const handleTaskToggle = async (task: Task) => {
         try {
@@ -39,11 +51,11 @@ export default function ProjectDetailPage() {
                 id: task.id,
                 data: {
                     status: task.status === 'done' ? 'todo' : 'done',
-                    completedAt: task.status === 'done' ? null : new Date()
-                }
+                    completedAt: task.status === 'done' ? null : new Date(),
+                },
             });
-            toast.success(task.status === 'done' ? 'Tarea reabierta' : '¡Tarea completada!');
-        } catch (e) {
+            toast.success(task.status === 'done' ? 'Tarea reabierta' : 'Tarea completada');
+        } catch {
             toast.error('Error al actualizar tarea');
         }
     };
@@ -52,10 +64,10 @@ export default function ProjectDetailPage() {
         try {
             await updateProjectMutation.mutateAsync({
                 id: id!,
-                data: { status: newStatus }
+                data: { status: newStatus },
             });
             toast.success('Estado del proyecto actualizado');
-        } catch (e) {
+        } catch {
             toast.error('Error al actualizar estado');
         }
     };
@@ -63,94 +75,106 @@ export default function ProjectDetailPage() {
     if (isProjectLoading) {
         return (
             <div className="space-y-8 animate-pulse">
-                <div className="h-12 w-48 bg-slate-100 rounded-2xl" />
-                <div className="h-64 bg-white rounded-[2.5rem] border border-slate-100" />
+                <div className="h-12 w-48 rounded-2xl bg-slate-100" />
+                <div className="h-64 rounded-[2.5rem] border border-slate-100 bg-white" />
             </div>
         );
     }
 
     if (!project) {
         return (
-            <div className="text-center py-20">
-                <h2 className="text-2xl font-black text-slate-900 uppercase">Proyecto no encontrado</h2>
-                <Link to="/projects">
-                    <Button variant="link" className="mt-4 text-emerald-600 font-bold">Volver a proyectos</Button>
-                </Link>
+            <div className="py-20">
+                <Surface variant="dashed" className="mx-auto max-w-2xl">
+                    <EmptyState
+                        icon={Briefcase}
+                        title="Proyecto no encontrado"
+                        description="Vuelve al tablero de proyectos para seleccionar otro registro."
+                    />
+                    <div className="pb-10 text-center">
+                        <Button asChild variant="link" className="font-bold text-emerald-600">
+                            <Link to="/projects">Volver a proyectos</Link>
+                        </Button>
+                    </div>
+                </Surface>
             </div>
         );
     }
 
     return (
-        <div className="space-y-8 max-w-7xl mx-auto pb-20">
-            {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div className="space-y-4">
-                    <Link to="/projects" className="flex items-center gap-2 text-slate-400 hover:text-slate-900 transition-colors font-bold group">
-                        <ChevronLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform" />
-                        Volver a Proyectos
-                    </Link>
-                    <div className="flex items-center gap-4">
-                        <div className="h-14 w-14 bg-indigo-600 rounded-[1.5rem] flex items-center justify-center text-white shadow-lg shadow-indigo-100">
+        <div className="mx-auto max-w-7xl space-y-8 pb-20">
+            <div className="space-y-4">
+                <BackLink to="/projects" label="Volver a proyectos" />
+
+                <PageHeader
+                    title={project.name}
+                    subtitle={client ? `Cliente: ${client.name}` : 'Cliente vinculado al proyecto'}
+                    icon={(
+                        <div className="flex h-14 w-14 items-center justify-center rounded-[1.5rem] bg-indigo-600 text-white shadow-lg shadow-indigo-100">
                             <Briefcase className="h-7 w-7" />
                         </div>
-                        <div>
-                            <h1 className="text-4xl font-black text-slate-900 tracking-tight leading-none">{project.name}</h1>
-                            <p className="text-slate-500 font-bold mt-1.5 flex items-center gap-2">
-                                <User className="h-4 w-4" />
-                                {client?.name || 'Cargando cliente...'}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-                <div className="flex bg-white p-1 rounded-[1.5rem] border border-slate-200 shadow-sm self-start md:self-auto">
-                    {(['active', 'on_hold', 'done'] as const).map((s) => (
-                        <button
-                            key={s}
-                            onClick={() => handleStatusChange(s)}
-                            className={cn(
-                                "px-6 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all",
-                                project.status === s
-                                    ? "bg-slate-900 text-white shadow-lg"
-                                    : "text-slate-400 hover:text-slate-900"
-                            )}
-                        >
-                            {s === 'active' ? 'Activo' : s === 'on_hold' ? 'En Pausa' : 'Finalizado'}
-                        </button>
-                    ))}
-                </div>
+                    )}
+                    actions={(
+                        <SegmentedControl className="bg-white shadow-sm">
+                            {PROJECT_STATUS_ORDER.map((status) => (
+                                <SegmentedControlItem
+                                    key={status}
+                                    active={project.status === status}
+                                    onClick={() => handleStatusChange(status)}
+                                    label={PROJECT_STATUS_CONFIG[status].label}
+                                    className="px-6 py-2.5 text-[10px] uppercase tracking-widest"
+                                />
+                            ))}
+                        </SegmentedControl>
+                    )}
+                />
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Main Content: Tasks/Milestones */}
-                <div className="lg:col-span-2 space-y-8">
-                    {/* Progress Overview */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <Card className="border-none bg-emerald-50 rounded-3xl p-6 shadow-sm">
-                            <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Completado</p>
-                            <p className="text-3xl font-black text-emerald-900">
-                                {tasks?.length ? Math.round((tasks.filter(t => t.status === 'done').length / tasks.length) * 100) : 0}%
-                            </p>
-                        </Card>
-                        <Card className="border-none bg-indigo-50 rounded-3xl p-6 shadow-sm">
-                            <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-1">Tareas Pendientes</p>
-                            <p className="text-3xl font-black text-indigo-900">{tasks?.filter(t => t.status !== 'done').length || 0}</p>
-                        </Card>
-                        <Card className="border-none bg-slate-100 rounded-3xl p-6 shadow-sm">
-                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Días Restantes</p>
-                            <p className="text-3xl font-black text-slate-900">12</p>
-                        </Card>
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+                <div className="space-y-8 lg:col-span-2">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                        <StatCard
+                            label="Completado"
+                            value={`${progress}%`}
+                            icon={CheckCircle2}
+                            tone="emerald"
+                        />
+                        <StatCard
+                            label="Pendientes"
+                            value={pendingTasks}
+                            icon={Layout}
+                            tone="indigo"
+                        />
+                        <StatCard
+                            label="Dias Restantes"
+                            value={remainingDays ?? '-'}
+                            icon={Calendar}
+                            tone="slate"
+                            badge={
+                                remainingDays !== null ? (
+                                    <span className="text-[10px] font-bold text-slate-400">
+                                        {remainingDays >= 0 ? 'hasta entrega' : 'atrasado'}
+                                    </span>
+                                ) : null
+                            }
+                        />
                     </div>
 
                     <div className="space-y-6">
                         <div className="flex items-center justify-between">
-                            <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-3">
+                            <h2 className="flex items-center gap-3 text-xl font-black uppercase tracking-tight text-slate-900">
                                 <Layout className="h-5 w-5 text-indigo-600" />
                                 Hitos y Tareas
                             </h2>
-                            <Button className="rounded-xl bg-slate-900 text-white font-bold h-10 px-4 gap-2">
-                                <Plus className="h-4 w-4" />
-                                Nueva Tarea
-                            </Button>
+                            <TaskDialog
+                                clientId={project.clientId}
+                                projectId={project.id}
+                                trigger={(
+                                    <Button variant="pagePrimary" className="h-10 gap-2 px-4">
+                                        <Plus className="h-4 w-4" />
+                                        Nueva Tarea
+                                    </Button>
+                                )}
+                            />
                         </div>
 
                         <div className="space-y-3">
@@ -159,107 +183,130 @@ export default function ProjectDetailPage() {
                                     <div
                                         key={task.id}
                                         className={cn(
-                                            "flex items-center gap-5 p-5 rounded-[1.5rem] border transition-all group",
+                                            'group flex items-center gap-5 rounded-[1.5rem] border p-5 transition-all',
                                             task.status === 'done'
-                                                ? "bg-slate-50/50 border-slate-100 opacity-60"
-                                                : "bg-white border-slate-200 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-50/50"
+                                                ? 'border-slate-100 bg-slate-50/50 opacity-60'
+                                                : 'border-slate-200 bg-white hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-50/50'
                                         )}
                                     >
-                                        <button
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon"
                                             onClick={() => handleTaskToggle(task)}
                                             className={cn(
-                                                "h-8 w-8 rounded-xl border flex items-center justify-center transition-all",
+                                                'h-8 w-8 rounded-xl border transition-all',
                                                 task.status === 'done'
-                                                    ? "bg-emerald-500 border-emerald-500 text-white"
-                                                    : "border-slate-200 text-slate-200 hover:border-indigo-500 hover:text-indigo-500"
+                                                    ? 'border-emerald-500 bg-emerald-500 text-white hover:bg-emerald-500 hover:text-white'
+                                                    : 'border-slate-200 text-slate-200 hover:border-indigo-500 hover:bg-white hover:text-indigo-500'
                                             )}
                                         >
                                             <CheckCircle2 className="h-5 w-5" />
-                                        </button>
-                                        <div className="flex-1 min-w-0">
-                                            <p className={cn(
-                                                "font-bold text-slate-800 tracking-tight transition-all",
-                                                task.status === 'done' && "line-through text-slate-400"
-                                            )}>{task.title}</p>
-                                            <div className="flex items-center gap-3 mt-1.5">
-                                                {task.scheduledDate && (
-                                                    <span className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                        </Button>
+
+                                        <div className="min-w-0 flex-1">
+                                            <p
+                                                className={cn(
+                                                    'font-bold tracking-tight text-slate-800 transition-all',
+                                                    task.status === 'done' && 'line-through text-slate-400'
+                                                )}
+                                            >
+                                                {task.title}
+                                            </p>
+                                            <div className="mt-1.5 flex items-center gap-3">
+                                                {task.scheduledDate ? (
+                                                    <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-400">
                                                         <Clock className="h-3 w-3" />
                                                         {task.scheduledDate}
                                                     </span>
-                                                )}
-                                                {task.priority === 3 && (
-                                                    <span className="flex items-center gap-1.5 text-[10px] font-black text-rose-500 bg-rose-50 px-2 py-0.5 rounded-lg border border-rose-100 uppercase tracking-tighter">
-                                                        <AlertCircle className="h-3 w-3" />
-                                                        Urgente
-                                                    </span>
-                                                )}
+                                                ) : null}
+                                                {task.priority === 3 ? (
+                                                    <PriorityBadge priority={task.priority} />
+                                                ) : null}
                                             </div>
                                         </div>
                                     </div>
                                 ))
                             ) : (
-                                <div className="text-center py-20 bg-slate-50 rounded-[2.5rem] border-2 border-dashed border-slate-200">
-                                    <p className="text-slate-400 font-bold">No hay tareas asignadas a este proyecto.</p>
-                                    <Button variant="outline" className="mt-4 rounded-xl border-slate-300 font-bold">Crear la primera tarea</Button>
-                                </div>
+                                <Surface variant="dashed">
+                                    <EmptyState
+                                        icon={Layout}
+                                        title="Sin tareas"
+                                        description="No hay tareas asignadas a este proyecto."
+                                    />
+                                    <div className="pb-10 text-center">
+                                        <TaskDialog
+                                            clientId={project.clientId}
+                                            projectId={project.id}
+                                            trigger={(
+                                                <Button variant="outline" className="rounded-2xl font-bold">
+                                                    Crear la primera tarea
+                                                </Button>
+                                            )}
+                                        />
+                                    </div>
+                                </Surface>
                             )}
                         </div>
                     </div>
                 </div>
 
-                {/* Sidebar: Details */}
                 <div className="space-y-8">
-                    <Card className="border-slate-200 rounded-[2.5rem] shadow-xl shadow-slate-100 overflow-hidden bg-white">
-                        <CardHeader className="p-8 border-b border-slate-50">
-                            <CardTitle className="text-sm font-black uppercase tracking-widest text-slate-900">Información General</CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-8 space-y-6">
-                            <div className="space-y-1.5">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Fecha de Inicio</label>
-                                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 font-bold text-slate-700 flex items-center gap-3">
+                    <Surface variant="premiumBordered" className="overflow-hidden rounded-[2.5rem] shadow-xl shadow-slate-100">
+                        <div className="border-b border-slate-50 p-8">
+                            <h2 className="text-sm font-black uppercase tracking-widest text-slate-900">Informacion General</h2>
+                        </div>
+                        <div className="space-y-6 p-8">
+                            <FieldGroup label="Fecha de Inicio">
+                                <div className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50 p-4 font-bold text-slate-700">
                                     <Calendar className="h-5 w-5 text-indigo-500" />
                                     {project.startDate ? format(project.startDate, 'dd MMM, yyyy', { locale: es }) : 'No definida'}
                                 </div>
-                            </div>
-                            <div className="space-y-1.5">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Entrega Estimada</label>
-                                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 font-bold text-slate-700 flex items-center gap-3">
+                            </FieldGroup>
+                            <FieldGroup label="Entrega Estimada">
+                                <div className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50 p-4 font-bold text-slate-700">
                                     <Calendar className="h-5 w-5 text-rose-500" />
                                     {project.dueDate ? format(project.dueDate, 'dd MMM, yyyy', { locale: es }) : 'No definida'}
                                 </div>
-                            </div>
-                            {project.description && (
-                                <div className="space-y-1.5 leading-relaxed">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Descripción</label>
-                                    <p className="text-sm font-medium text-slate-500 p-4 border border-slate-100 rounded-2xl">{project.description}</p>
+                            </FieldGroup>
+                            {project.description ? (
+                                <FieldGroup label="Descripcion">
+                                    <p className="rounded-2xl border border-slate-100 p-4 text-sm font-medium leading-relaxed text-slate-500">
+                                        {project.description}
+                                    </p>
+                                </FieldGroup>
+                            ) : null}
+                            {project.tagIds.length > 0 ? (
+                                <div className="flex flex-wrap gap-2 pt-4">
+                                    {project.tagIds.map((tagId) => (
+                                        <span
+                                            key={tagId}
+                                            className="flex items-center gap-1.5 rounded-lg bg-slate-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-600"
+                                        >
+                                            <Tag className="h-3 w-3" />
+                                            {tagId}
+                                        </span>
+                                    ))}
                                 </div>
-                            )}
-                            <div className="flex flex-wrap gap-2 pt-4">
-                                {project.tagIds.map(tagId => (
-                                    <span key={tagId} className="px-3 py-1 bg-slate-100 text-slate-600 rounded-lg text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5">
-                                        <Tag className="h-3 w-3" />
-                                        {tagId}
-                                    </span>
-                                ))}
-                            </div>
-                        </CardContent>
-                    </Card>
+                            ) : null}
+                        </div>
+                    </Surface>
 
-                    {/* Quick Access Client */}
-                    {client && (
-                        <Link to={`/clients/${client.id}`}>
-                            <Card className="border-none bg-slate-900 rounded-[2.5rem] p-8 text-white hover:-translate-y-2 transition-transform shadow-2xl shadow-slate-300 group">
-                                <div className="flex items-center gap-4 mb-4">
-                                    <div className="h-10 w-10 bg-white/5 rounded-xl border border-white/10 flex items-center justify-center text-white group-hover:bg-emerald-500 group-hover:border-emerald-500 transition-colors">
-                                        <User className="h-5 w-5" />
+                    {client ? (
+                        <Button asChild variant="ghost" className="group h-auto w-full rounded-none p-0 hover:bg-transparent">
+                            <Link to={`/clients/${client.id}`}>
+                                <Surface variant="dark" className="rounded-[2.5rem] p-8 transition-transform hover:-translate-y-2">
+                                    <div className="mb-4 flex items-center gap-4">
+                                        <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white transition-colors group-hover:bg-emerald-500 group-hover:border-emerald-500">
+                                            <User className="h-5 w-5" />
+                                        </div>
+                                        <h3 className="text-xl font-black uppercase tracking-tight">Ver Cliente</h3>
                                     </div>
-                                    <h3 className="text-xl font-black uppercase tracking-tight">Ver Cliente</h3>
-                                </div>
-                                <p className="text-slate-400 text-sm font-bold opacity-80">{client.name}</p>
-                            </Card>
-                        </Link>
-                    )}
+                                    <p className="text-sm font-bold text-slate-400 opacity-80">{client.name}</p>
+                                </Surface>
+                            </Link>
+                        </Button>
+                    ) : null}
                 </div>
             </div>
         </div>

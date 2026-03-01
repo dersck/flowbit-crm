@@ -7,7 +7,7 @@ import {
     doc,
     getDoc,
     addDoc,
-    updateDoc,
+    setDoc,
     deleteDoc,
     serverTimestamp
 } from 'firebase/firestore';
@@ -96,11 +96,11 @@ export function useWorkspaceMutation(
 
     const updateMutation = useMutation({
         mutationFn: async ({ id, data }: { id: string; data: any }) => {
-            const ref = doc(db, collectionName, id);
-            await updateDoc(ref, {
+            const ref = doc(db, collectionName, id).withConverter((converters as any)[collectionName]);
+            await setDoc(ref, {
                 ...data,
                 updatedAt: serverTimestamp(),
-            });
+            }, { merge: true });
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: [collectionName, workspaceId] });

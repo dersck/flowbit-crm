@@ -1,46 +1,48 @@
-import React, { useState } from 'react';
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogDescription
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import {
-    CheckCircle2,
-    Users,
-    Briefcase
-} from 'lucide-react';
-import { useWorkspaceMutation } from '@/hooks/useFirestore';
+import { useState } from 'react';
+import { Briefcase, CheckCircle2, Users } from 'lucide-react';
 import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
+import { Dialog } from '@/components/ui/dialog';
+import { DialogActions, DialogHero, DialogShell } from '@/components/ui/dialog-shell';
+import { FieldGroup } from '@/components/ui/form-field';
+import { Input } from '@/components/ui/input';
+import { SegmentedControl, SegmentedControlItem } from '@/components/ui/segmented-control';
+import { useWorkspaceMutation, useWorkspaceQuery } from '@/hooks/useFirestore';
+import type { Client } from '@/types';
 
-type Tab = 'task' | 'client' | 'project' | 'activity';
+type Tab = 'task' | 'client' | 'project';
 
 interface QuickAddModalProps {
-    open: boolean;
-    onOpenChange: (open: boolean) => void;
+    open: boolean
+    onOpenChange: (open: boolean) => void
 }
+
+const selectClassName =
+    'flex h-12 w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 text-slate-900 outline-none transition-all focus:bg-white focus:ring-4 focus:ring-emerald-500/10';
 
 export default function QuickAddModal({ open, onOpenChange }: QuickAddModalProps) {
     const [activeTab, setActiveTab] = useState<Tab>('task');
     const [loading, setLoading] = useState(false);
+    const [taskTitle, setTaskTitle] = useState('');
+    const [clientName, setClientName] = useState('');
+    const [projectName, setProjectName] = useState('');
+    const [projectClientId, setProjectClientId] = useState('');
 
-    // Create mutations
+    const { data: clients } = useWorkspaceQuery<Client>('clients', 'quick-add-clients');
     const { createMutation: createTask } = useWorkspaceMutation('tasks');
     const { createMutation: createClient } = useWorkspaceMutation('clients');
     const { createMutation: createProject } = useWorkspaceMutation('projects');
 
-    // Form states
-    const [taskTitle, setTaskTitle] = useState('');
-    const [clientName, setClientName] = useState('');
-    const [projectName, setProjectName] = useState('');
+    const resetForm = () => {
+        setTaskTitle('');
+        setClientName('');
+        setProjectName('');
+        setProjectClientId('');
+    };
 
-    const handleCreate = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleCreate = async (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
         setLoading(true);
+
         try {
             if (activeTab === 'task') {
                 await createTask.mutateAsync({
@@ -48,146 +50,167 @@ export default function QuickAddModal({ open, onOpenChange }: QuickAddModalProps
                     status: 'inbox',
                     priority: 2,
                 });
-                toast.success('Tarea añadida a la bandeja');
-                setTaskTitle('');
+                toast.success('Tarea anadida a la bandeja');
             } else if (activeTab === 'client') {
                 await createClient.mutateAsync({
                     name: clientName,
-                    stage: 'prospecto',
+                    stage: 'nuevo',
                     contact: {},
                     tagIds: [],
                 });
                 toast.success('Cliente registrado');
-                setClientName('');
-            } else if (activeTab === 'project') {
+            } else {
                 await createProject.mutateAsync({
                     name: projectName,
                     status: 'active',
-                    clientId: 'pending',
+                    clientId: projectClientId,
                     tagIds: [],
                 });
                 toast.success('Proyecto iniciado');
-                setProjectName('');
             }
+
+            resetForm();
             onOpenChange(false);
-        } catch (error: any) {
-            toast.error('Error: ' + error.message);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Error inesperado';
+            toast.error(`Error: ${message}`);
         } finally {
             setLoading(false);
         }
     };
 
+    const isSubmitDisabled =
+        loading ||
+        (activeTab === 'task' && !taskTitle) ||
+        (activeTab === 'client' && !clientName) ||
+        (activeTab === 'project' && (!projectName || !projectClientId));
+
+    const currentTitle =
+        activeTab === 'task'
+            ? 'Nueva Tarea'
+            : activeTab === 'client'
+                ? 'Nuevo Cliente'
+                : 'Nuevo Proyecto';
+
+    const currentDescription =
+        activeTab === 'task'
+            ? 'Crea una tarea rapida para tu bandeja.'
+            : activeTab === 'client'
+                ? 'Registra un nuevo cliente sin salir de tu flujo.'
+                : 'Crea un proyecto global y vinculalo a un cliente existente.';
+
+    const CurrentIcon = activeTab === 'task' ? CheckCircle2 : activeTab === 'client' ? Users : Briefcase;
+
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden rounded-3xl border-none shadow-2xl">
-                <div className="bg-slate-50 p-6 border-b border-slate-100">
-                    <DialogHeader>
-                        <DialogTitle className="text-2xl font-bold text-slate-900 tracking-tight">Acceso Rápido</DialogTitle>
-                        <DialogDescription className="text-slate-500">
-                            Crea elementos rápidamente desde cualquier lugar.
-                        </DialogDescription>
-                    </DialogHeader>
+            <DialogShell size="md" className="p-0">
+                <div className="border-b border-slate-100 bg-slate-50 p-6">
+                    <DialogHero
+                        icon={<CurrentIcon className="h-7 w-7" />}
+                        title={currentTitle}
+                        description={currentDescription}
+                        tone={activeTab === 'project' ? 'indigo' : activeTab === 'client' ? 'slate' : 'emerald'}
+                    />
 
-                    <div className="flex bg-white p-1 rounded-2xl mt-6 border border-slate-200">
-                        <TabButton
+                    <SegmentedControl className="mt-6 bg-white">
+                        <SegmentedControlItem
                             active={activeTab === 'task'}
                             onClick={() => setActiveTab('task')}
                             icon={CheckCircle2}
                             label="Tarea"
+                            className="flex-1"
                         />
-                        <TabButton
+                        <SegmentedControlItem
                             active={activeTab === 'client'}
                             onClick={() => setActiveTab('client')}
                             icon={Users}
                             label="Cliente"
+                            className="flex-1"
                         />
-                        <TabButton
+                        <SegmentedControlItem
                             active={activeTab === 'project'}
                             onClick={() => setActiveTab('project')}
                             icon={Briefcase}
                             label="Proyecto"
+                            className="flex-1"
                         />
-                    </div>
+                    </SegmentedControl>
                 </div>
 
-                <div className="p-8 bg-white">
-                    <form onSubmit={handleCreate} className="space-y-6">
-                        {activeTab === 'task' && (
-                            <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                                <div className="space-y-2">
-                                    <label className="text-sm font-bold text-slate-700 uppercase tracking-wider">Título de la Tarea</label>
-                                    <Input
-                                        placeholder="Ej. Revisar contrato de Acme Corp"
-                                        value={taskTitle}
-                                        onChange={(e) => setTaskTitle(e.target.value)}
-                                        required
-                                        className="h-12 text-lg rounded-xl border-slate-200 focus:ring-emerald-500"
-                                    />
-                                </div>
-                            </div>
-                        )}
-
-                        {activeTab === 'client' && (
-                            <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                                <div className="space-y-2">
-                                    <label className="text-sm font-bold text-slate-700 uppercase tracking-wider">Nombre del Cliente / Empresa</label>
-                                    <Input
-                                        placeholder="Ej. Acme Corp"
-                                        value={clientName}
-                                        onChange={(e) => setClientName(e.target.value)}
-                                        required
-                                        className="h-12 text-lg rounded-xl border-slate-200"
-                                    />
-                                </div>
-                            </div>
-                        )}
-
-                        {activeTab === 'project' && (
-                            <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                                <div className="space-y-2">
-                                    <label className="text-sm font-bold text-slate-700 uppercase tracking-wider">Nombre del Proyecto</label>
-                                    <Input
-                                        placeholder="Ej. Rediseño Web 2024"
-                                        value={projectName}
-                                        onChange={(e) => setProjectName(e.target.value)}
-                                        required
-                                        className="h-12 text-lg rounded-xl border-slate-200"
-                                    />
-                                </div>
-                            </div>
-                        )}
-
-                        <div className="flex justify-end gap-3 pt-4">
-                            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-                                Cancelar
-                            </Button>
-                            <Button
-                                type="submit"
-                                disabled={loading}
-                                className="h-11 px-8 rounded-xl bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-100 font-bold"
-                            >
-                                {loading ? 'Creando...' : 'Crear Todo'}
-                            </Button>
+                <form onSubmit={handleCreate} className="space-y-8 p-8">
+                    {activeTab === 'task' ? (
+                        <div className="animate-in slide-in-from-bottom-2 fade-in space-y-4 duration-300">
+                            <FieldGroup label="Titulo de la Tarea">
+                                <Input
+                                    placeholder="Ej. Revisar contrato de Acme Corp"
+                                    value={taskTitle}
+                                    onChange={(event) => setTaskTitle(event.target.value)}
+                                    required
+                                    className="h-12 text-lg"
+                                />
+                            </FieldGroup>
                         </div>
-                    </form>
-                </div>
-            </DialogContent>
-        </Dialog>
-    );
-}
+                    ) : null}
 
-function TabButton({ active, onClick, icon: Icon, label }: any) {
-    return (
-        <button
-            type="button"
-            onClick={onClick}
-            className={cn(
-                "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all",
-                active ? "bg-slate-900 text-white shadow-lg" : "text-slate-500 hover:bg-slate-50"
-            )}
-        >
-            <Icon className="h-4 w-4" />
-            <span>{label}</span>
-        </button>
+                    {activeTab === 'client' ? (
+                        <div className="animate-in slide-in-from-bottom-2 fade-in space-y-4 duration-300">
+                            <FieldGroup label="Nombre del Cliente o Empresa">
+                                <Input
+                                    placeholder="Ej. Acme Corp"
+                                    value={clientName}
+                                    onChange={(event) => setClientName(event.target.value)}
+                                    required
+                                    className="h-12 text-lg"
+                                />
+                            </FieldGroup>
+                        </div>
+                    ) : null}
+
+                    {activeTab === 'project' ? (
+                        <div className="animate-in slide-in-from-bottom-2 fade-in space-y-4 duration-300">
+                            <FieldGroup label="Nombre del Proyecto">
+                                <Input
+                                    placeholder="Ej. Rediseno Web 2026"
+                                    value={projectName}
+                                    onChange={(event) => setProjectName(event.target.value)}
+                                    required
+                                    className="h-12 text-lg"
+                                />
+                            </FieldGroup>
+
+                            <FieldGroup label="Cliente Vinculado">
+                                <select
+                                    value={projectClientId}
+                                    onChange={(event) => setProjectClientId(event.target.value)}
+                                    className={selectClassName}
+                                    required
+                                >
+                                    <option value="">Selecciona un cliente</option>
+                                    {clients?.map((client) => (
+                                        <option key={client.id} value={client.id}>
+                                            {client.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </FieldGroup>
+
+                            {clients?.length === 0 ? (
+                                <p className="text-sm font-bold italic text-slate-400">
+                                    Primero necesitas crear al menos un cliente para iniciar un proyecto.
+                                </p>
+                            ) : null}
+                        </div>
+                    ) : null}
+
+                    <DialogActions
+                        onCancel={() => onOpenChange(false)}
+                        confirmLabel={activeTab === 'task' ? 'Crear Tarea' : activeTab === 'client' ? 'Crear Cliente' : 'Crear Proyecto'}
+                        confirmVariant="confirm"
+                        disabled={isSubmitDisabled}
+                        isLoading={loading}
+                    />
+                </form>
+            </DialogShell>
+        </Dialog>
     );
 }
