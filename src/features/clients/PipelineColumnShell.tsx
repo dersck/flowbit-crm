@@ -3,6 +3,7 @@ import type { LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface PipelineColumnShellProps {
+    id: string
     label: string
     leadCount: number
     totalBudget: number
@@ -11,11 +12,12 @@ interface PipelineColumnShellProps {
     activeId: string | null
     isOver: boolean
     isWonStage?: boolean
-    bodyRef?: Ref<HTMLDivElement>
+    bodyRef?: Ref<HTMLUListElement>
     children: ReactNode
 }
 
 export default function PipelineColumnShell({
+    id,
     label,
     leadCount,
     totalBudget,
@@ -28,7 +30,7 @@ export default function PipelineColumnShell({
     children,
 }: PipelineColumnShellProps) {
     return (
-        <div className="flex h-full w-80 flex-shrink-0 flex-col gap-4">
+        <section aria-labelledby={id} className="flex h-full w-80 flex-shrink-0 flex-col gap-4">
             <div
                 className={cn(
                     "rounded-[2rem] border p-6 transition-all",
@@ -43,7 +45,7 @@ export default function PipelineColumnShell({
                             <Icon className="h-4 w-4 text-slate-900" />
                         </div>
                         <div>
-                            <h3 className="leading-none font-black tracking-tight text-slate-900">{label}</h3>
+                            <h3 id={id} className="leading-none font-black tracking-tight text-slate-900">{label}</h3>
                             <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-slate-500">
                                 {leadCount} {leadCount === 1 ? "Lead" : "Leads"}
                             </p>
@@ -65,7 +67,7 @@ export default function PipelineColumnShell({
                 </div>
             </div>
 
-            <div
+            <ul
                 ref={bodyRef}
                 className={cn(
                     "flex min-h-[400px] flex-1 flex-col gap-3 rounded-[2.5rem] p-2 transition-all duration-300",
@@ -75,7 +77,7 @@ export default function PipelineColumnShell({
                 )}
             >
                 {children}
-            </div>
-        </div>
+            </ul>
+        </section>
     )
 }

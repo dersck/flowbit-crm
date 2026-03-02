@@ -34,6 +34,7 @@ function SortableItem({ client }: { client: Client }) {
         attributes,
         listeners,
         setNodeRef,
+        setActivatorNodeRef,
         transform,
         transition,
         isDragging,
@@ -46,7 +47,7 @@ function SortableItem({ client }: { client: Client }) {
     };
 
     return (
-        <div
+        <li
             ref={setNodeRef}
             style={style}
             className={cn(
@@ -54,7 +55,7 @@ function SortableItem({ client }: { client: Client }) {
                 isDragging && "z-50 opacity-50 ring-2 ring-emerald-500 ring-offset-2"
             )}
         >
-            <div className="flex items-start justify-between gap-3">
+            <article className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
                     <h4 className="truncate font-black tracking-tight text-slate-900">{client.name}</h4>
                     {client.company ? (
@@ -62,16 +63,19 @@ function SortableItem({ client }: { client: Client }) {
                             <Building2 className="h-3 w-3" />
                             {client.company}
                         </p>
-                    ) : null}
+                        ) : null}
                 </div>
-                <div
+                <button
+                    ref={setActivatorNodeRef}
+                    type="button"
+                    aria-label={`Mover cliente ${client.name}`}
                     {...attributes}
                     {...listeners}
                     className="-m-1 cursor-grab p-1 text-slate-300 transition-colors hover:text-slate-600 active:cursor-grabbing"
                 >
                     <GripVertical className="h-4 w-4" />
-                </div>
-            </div>
+                </button>
+            </article>
 
             {client.budget || client.contact.phone ? (
                 <div className="mt-4 flex items-center justify-between border-t border-slate-50 pt-4">
@@ -89,7 +93,7 @@ function SortableItem({ client }: { client: Client }) {
                     ) : null}
                 </div>
             ) : null}
-        </div>
+        </li>
     );
 }
 
@@ -109,6 +113,7 @@ function DroppableColumn({
 
     return (
         <PipelineColumnShell
+            id={`pipeline-column-${stage}`}
             label={config.label}
             leadCount={clients.length}
             totalBudget={totalBudget}
@@ -128,16 +133,17 @@ function DroppableColumn({
                     <SortableItem key={client.id} client={client} />
                 ))}
                 {clients.length === 0 && !activeId ? (
-                    <div className="flex flex-1 items-center justify-center rounded-[2rem] border border-dashed border-slate-100 bg-slate-50/30 p-8 text-center">
+                    <li className="flex flex-1 items-center justify-center rounded-[2rem] border border-dashed border-slate-100 bg-slate-50/30 p-8 text-center">
                         <p className="leading-relaxed text-[10px] font-bold uppercase tracking-widest text-slate-400">
                             Arrastra aqui para
                             <br />
                             mover a {config.label}
                         </p>
-                    </div>
+                    </li>
                 ) : null}
                 {activeId && clients.length === 0 ? (
-                    <div
+                    <li
+                        aria-hidden="true"
                         className={cn(
                             "flex-1 rounded-[2rem] border-2 border-dashed transition-all",
                             isOver ? "border-emerald-400 bg-emerald-50/50" : "border-slate-200 bg-slate-50/10"
@@ -186,7 +192,9 @@ export default function PipelineView({ clients, onUpdateStage }: PipelineViewPro
     const activeClient = clients.find((client) => client.id === activeId);
 
     return (
-        <div className="scrollbar-hide flex min-h-[700px] items-start gap-6 overflow-x-auto px-1 pb-8">
+        <section aria-labelledby="clients-pipeline-title" className="space-y-4">
+            <h2 id="clients-pipeline-title" className="sr-only">Pipeline de clientes</h2>
+            <div className="scrollbar-hide flex min-h-[700px] items-start gap-6 overflow-x-auto px-1 pb-8">
             <DndContext
                 sensors={sensors}
                 collisionDetection={closestCorners}
@@ -214,7 +222,7 @@ export default function PipelineView({ clients, onUpdateStage }: PipelineViewPro
                     }}
                 >
                     {activeClient ? (
-                        <div className="z-[9999] w-80 rotate-2 scale-105 rounded-3xl border border-emerald-200 bg-white p-5 shadow-2xl">
+                        <article className="z-[9999] w-80 rotate-2 scale-105 rounded-3xl border border-emerald-200 bg-white p-5 shadow-2xl">
                             <h4 className="truncate font-black tracking-tight text-slate-900">{activeClient.name}</h4>
                             <p className="mt-1 truncate text-[10px] font-bold uppercase tracking-widest text-slate-400">
                                 {activeClient.company || 'Sin empresa'}
@@ -229,10 +237,11 @@ export default function PipelineView({ clients, onUpdateStage }: PipelineViewPro
                                     <div />
                                 )}
                             </div>
-                        </div>
+                        </article>
                     ) : null}
                 </DragOverlay>
             </DndContext>
-        </div>
+            </div>
+        </section>
     );
 }

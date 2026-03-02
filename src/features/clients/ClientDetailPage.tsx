@@ -1,4 +1,4 @@
-import { useMemo, useState, type UIEvent } from 'react';
+import { useEffect, useMemo, useState, type UIEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { where } from 'firebase/firestore';
 import { format } from 'date-fns';
@@ -80,6 +80,10 @@ export default function ClientDetailPage() {
         where('clientId', '==', id),
     ]);
     const { deleteMutation } = useWorkspaceMutation('activities');
+
+    useEffect(() => {
+        document.title = client ? `${client.name} | Flowbit CRM` : 'Cliente | Flowbit CRM';
+    }, [client]);
 
     const activities = activitiesData?.sort((a, b) => {
         const dateA = a.date instanceof Date ? a.date.getTime() : 0;
@@ -235,52 +239,71 @@ export default function ClientDetailPage() {
                         </div>
 
                         <div className="flex flex-col gap-8 lg:flex-row">
-                            <div className="grid h-fit grid-cols-1 gap-3 md:grid-cols-2 lg:w-1/3 lg:grid-cols-1">
-                                {client.contact.email && <ContactItem icon={Mail} value={client.contact.email} tone="emerald" href={`mailto:${client.contact.email}`} className="text-sm" />}
-                                {client.contact.phone && <ContactItem icon={Phone} value={client.contact.phone} tone="indigo" href={`tel:${client.contact.phone}`} className="text-sm" />}
-                                {client.company && <ContactItem icon={Building2} value={client.company} tone="blue" className="text-sm" />}
-                                {client.budget && <ContactItem icon={Landmark} value={currencyFormatter.format(client.budget)} tone="amber" className="text-sm" />}
-                                {sourceLabel && <ContactItem icon={Share2} value={sourceLabel} tone="rose" className="text-sm" />}
-                                <ContactItem icon={Calendar} value={client.createdAt instanceof Date ? format(client.createdAt, 'dd MMM, yyyy', { locale: es }) : 'Reciente'} tone="slate" className="text-sm" />
-                            </div>
+                            <ul className="grid h-fit grid-cols-1 gap-3 md:grid-cols-2 lg:w-1/3 lg:grid-cols-1">
+                                {client.contact.email ? <li><ContactItem icon={Mail} value={client.contact.email} tone="emerald" href={`mailto:${client.contact.email}`} className="text-sm" /></li> : null}
+                                {client.contact.phone ? <li><ContactItem icon={Phone} value={client.contact.phone} tone="indigo" href={`tel:${client.contact.phone}`} className="text-sm" /></li> : null}
+                                {client.company ? <li><ContactItem icon={Building2} value={client.company} tone="blue" className="text-sm" /></li> : null}
+                                {client.budget ? <li><ContactItem icon={Landmark} value={currencyFormatter.format(client.budget)} tone="amber" className="text-sm" /></li> : null}
+                                {sourceLabel ? <li><ContactItem icon={Share2} value={sourceLabel} tone="rose" className="text-sm" /></li> : null}
+                                <li>
+                                    <ContactItem
+                                        icon={Calendar}
+                                        value={client.createdAt instanceof Date ? (
+                                            <time dateTime={client.createdAt.toISOString()}>
+                                                {format(client.createdAt, 'dd MMM, yyyy', { locale: es })}
+                                            </time>
+                                        ) : 'Reciente'}
+                                        tone="slate"
+                                        className="text-sm"
+                                    />
+                                </li>
+                            </ul>
 
-                            <div className="grid flex-1 grid-cols-2 gap-3">
-                                <StatCard
-                                    label="Proyectos"
-                                    value={activeProjectsCount}
-                                    icon={Briefcase}
-                                    tone="indigo"
-                                    className="p-5"
-                                    valueClassName="text-3xl"
-                                    badge={<span className="rounded-md bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-emerald-600">Activos</span>}
-                                />
-                                <StatCard
-                                    label="Urgente"
-                                    value={urgentTasksCount}
-                                    icon={TrendingUp}
-                                    tone="rose"
-                                    className="p-5"
-                                    valueClassName="text-3xl"
-                                    badge={<span className="rounded-md bg-rose-50 px-1.5 py-0.5 text-[10px] font-bold text-rose-600">Prioridad Alta</span>}
-                                />
-                                <StatCard
-                                    label="Inversion"
-                                    value={compactCurrencyFormatter.format(client.budget || 0)}
-                                    icon={Zap}
-                                    tone="amber"
-                                    className="p-5"
-                                    valueClassName="truncate text-[1.8rem]"
-                                />
-                                <StatCard
-                                    label="Ritmo"
-                                    value={rhythmDays}
-                                    icon={Timer}
-                                    tone="emerald"
-                                    className="p-5"
-                                    valueClassName="text-3xl"
-                                    badge={<span className="text-[10px] font-bold text-slate-400">dias sin contacto</span>}
-                                />
-                            </div>
+                            <ul className="grid flex-1 grid-cols-2 gap-3">
+                                <li>
+                                    <StatCard
+                                        label="Proyectos"
+                                        value={activeProjectsCount}
+                                        icon={Briefcase}
+                                        tone="indigo"
+                                        className="p-5"
+                                        valueClassName="text-3xl"
+                                        badge={<span className="rounded-md bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-emerald-600">Activos</span>}
+                                    />
+                                </li>
+                                <li>
+                                    <StatCard
+                                        label="Urgente"
+                                        value={urgentTasksCount}
+                                        icon={TrendingUp}
+                                        tone="rose"
+                                        className="p-5"
+                                        valueClassName="text-3xl"
+                                        badge={<span className="rounded-md bg-rose-50 px-1.5 py-0.5 text-[10px] font-bold text-rose-600">Prioridad Alta</span>}
+                                    />
+                                </li>
+                                <li>
+                                    <StatCard
+                                        label="Inversion"
+                                        value={compactCurrencyFormatter.format(client.budget || 0)}
+                                        icon={Zap}
+                                        tone="amber"
+                                        className="p-5"
+                                        valueClassName="truncate text-[1.8rem]"
+                                    />
+                                </li>
+                                <li>
+                                    <StatCard
+                                        label="Ritmo"
+                                        value={rhythmDays}
+                                        icon={Timer}
+                                        tone="emerald"
+                                        className="p-5"
+                                        valueClassName="text-3xl"
+                                        badge={<span className="text-[10px] font-bold text-slate-400">dias sin contacto</span>}
+                                    />
+                                </li>
+                            </ul>
                         </div>
                     </div>
                 </div>
@@ -308,24 +331,24 @@ export default function ClientDetailPage() {
                             <div className="absolute bottom-10 left-[39px] top-10 w-px bg-slate-50" />
 
                             {activities && activities.length > 0 ? (
-                                <>
+                                <ol className="space-y-1">
                                     {activities.map((activity, index) => {
                                         const isFirstOfDay = index === 0
                                             || format(activity.date, 'yyyy-MM-dd') !== format(activities[index - 1].date, 'yyyy-MM-dd');
 
                                         return (
-                                            <div key={activity.id} className="space-y-4">
+                                            <li key={activity.id} className="space-y-4">
                                                 {isFirstOfDay && (
                                                     <div className="flex items-center gap-4 py-4">
                                                         <div className="h-px flex-1 bg-slate-50" />
-                                                        <span className="whitespace-nowrap text-[9px] font-black uppercase tracking-[0.3em] text-slate-300">
+                                                        <time dateTime={format(activity.date, 'yyyy-MM-dd')} className="whitespace-nowrap text-[9px] font-black uppercase tracking-[0.3em] text-slate-300">
                                                             {format(activity.date, 'dd MMMM', { locale: es })}
-                                                        </span>
+                                                        </time>
                                                         <div className="h-px flex-1 bg-slate-50" />
                                                     </div>
                                                 )}
 
-                                                <div className="group relative flex items-start gap-5">
+                                                <article className="group relative flex items-start gap-5">
                                                     <div
                                                         className={cn(
                                                             "z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-4 border-white shadow-sm transition-all group-hover:scale-110",
@@ -352,9 +375,9 @@ export default function ClientDetailPage() {
                                                                 <span className="text-[10px] font-black uppercase text-slate-900">
                                                                     {getActivityLabel(activity.type)}
                                                                 </span>
-                                                                <span className="text-[10px] font-bold text-slate-400">
+                                                                <time dateTime={activity.date.toISOString()} className="text-[10px] font-bold text-slate-400">
                                                                     {format(activity.date, 'HH:mm')}
-                                                                </span>
+                                                                </time>
                                                             </div>
                                                             <DropdownMenu>
                                                             <DropdownMenuTrigger asChild>
@@ -362,6 +385,7 @@ export default function ClientDetailPage() {
                                                                         type="button"
                                                                         variant="ghost"
                                                                         size="icon"
+                                                                        aria-label={`Abrir acciones de ${getActivityLabel(activity.type)}`}
                                                                         className="h-6 w-6 rounded-lg p-1 text-slate-300 opacity-0 transition-all hover:bg-slate-100 hover:text-slate-600 group-hover:opacity-100"
                                                                     >
                                                                         <MoreHorizontal className="h-4 w-4" />
@@ -392,8 +416,8 @@ export default function ClientDetailPage() {
                                                             {activity.summary}
                                                         </p>
                                                     </div>
-                                                </div>
-                                            </div>
+                                                </article>
+                                            </li>
                                         );
                                     })}
 
@@ -408,7 +432,7 @@ export default function ClientDetailPage() {
                                             </div>
                                         </div>
                                     )}
-                                </>
+                                </ol>
                             ) : (
                                 <EmptyState
                                     icon={MessageSquare}
@@ -429,102 +453,113 @@ export default function ClientDetailPage() {
                             </h3>
                             <CreateProjectDialog clientId={id!} />
                         </div>
-                        <div className="space-y-2.5 p-3.5 lg:flex-1 lg:overflow-y-auto">
+                        <ul className="space-y-2.5 p-3.5 lg:flex-1 lg:overflow-y-auto">
                             {projects && projects.length > 0 ? (
                                 projects.map((project) => (
-                                    <Button
-                                        key={project.id}
-                                        asChild
-                                        variant="ghost"
-                                        className="group h-auto w-full rounded-[1.5rem] border border-slate-100 bg-white p-0 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-emerald-100 hover:bg-white hover:shadow-lg hover:shadow-slate-100"
-                                    >
-                                        <Link to={`/projects/${project.id}`} className="block p-3.5">
-                                            <div className="mb-2.5 flex items-start justify-between gap-3">
-                                                <div className="min-w-0">
-                                                    <h4 className="line-clamp-2 text-sm font-bold text-slate-700 transition-colors group-hover:text-emerald-600">
-                                                        {project.name}
-                                                    </h4>
-                                                    <p className="mt-1 text-[10px] font-bold text-slate-400">
-                                                        {(projectTaskStats.get(project.id)?.total ?? 0) > 0
-                                                            ? `${projectTaskStats.get(project.id)?.completed ?? 0} de ${projectTaskStats.get(project.id)?.total ?? 0} tareas completas`
-                                                            : 'Sin tareas registradas'}
-                                                    </p>
+                                    <li key={project.id}>
+                                        <Button
+                                            asChild
+                                            variant="ghost"
+                                            className="group h-auto w-full rounded-[1.5rem] border border-slate-100 bg-white p-0 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-emerald-100 hover:bg-white hover:shadow-lg hover:shadow-slate-100"
+                                        >
+                                            <Link to={`/projects/${project.id}`} className="block p-3.5">
+                                                <div className="mb-2.5 flex items-start justify-between gap-3">
+                                                    <div className="min-w-0">
+                                                        <h4 className="line-clamp-2 text-sm font-bold text-slate-700 transition-colors group-hover:text-emerald-600">
+                                                            {project.name}
+                                                        </h4>
+                                                        <p className="mt-1 text-[10px] font-bold text-slate-400">
+                                                            {(projectTaskStats.get(project.id)?.total ?? 0) > 0
+                                                                ? `${projectTaskStats.get(project.id)?.completed ?? 0} de ${projectTaskStats.get(project.id)?.total ?? 0} tareas completas`
+                                                                : 'Sin tareas registradas'}
+                                                        </p>
+                                                    </div>
+                                                    <div
+                                                        className={cn(
+                                                            "mt-1 h-2.5 w-2.5 shrink-0 rounded-full",
+                                                            project.status === 'active'
+                                                                ? "animate-pulse bg-emerald-500"
+                                                                : PROJECT_STATUS_CONFIG[project.status].bgClassName
+                                                        )}
+                                                    />
                                                 </div>
-                                                <div
-                                                    className={cn(
-                                                        "mt-1 h-2.5 w-2.5 shrink-0 rounded-full",
-                                                        project.status === 'active'
-                                                            ? "animate-pulse bg-emerald-500"
-                                                            : PROJECT_STATUS_CONFIG[project.status].bgClassName
-                                                    )}
-                                                />
-                                            </div>
-                                            <div className="mb-2.5 flex items-center justify-between gap-3">
-                                                <MetaChip tone={PROJECT_STATUS_CONFIG[project.status].chipTone}>
-                                                    {PROJECT_STATUS_CONFIG[project.status].label}
-                                                </MetaChip>
-                                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                                                    {projectTaskStats.get(project.id)?.progress ?? 0}%
-                                                </span>
-                                            </div>
-                                            <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-                                                <div
-                                                    className={cn(
-                                                        "h-full rounded-full transition-all duration-1000",
-                                                        PROJECT_STATUS_CONFIG[project.status].bgClassName
-                                                    )}
-                                                    style={{ width: `${projectTaskStats.get(project.id)?.progress ?? 0}%` }}
-                                                />
-                                            </div>
-                                        </Link>
-                                    </Button>
+                                                <div className="mb-2.5 flex items-center justify-between gap-3">
+                                                    <MetaChip tone={PROJECT_STATUS_CONFIG[project.status].chipTone}>
+                                                        {PROJECT_STATUS_CONFIG[project.status].label}
+                                                    </MetaChip>
+                                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                                                        {projectTaskStats.get(project.id)?.progress ?? 0}%
+                                                    </span>
+                                                </div>
+                                                <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                                                    <div
+                                                        className={cn(
+                                                            "h-full rounded-full transition-all duration-1000",
+                                                            PROJECT_STATUS_CONFIG[project.status].bgClassName
+                                                        )}
+                                                        style={{ width: `${projectTaskStats.get(project.id)?.progress ?? 0}%` }}
+                                                    />
+                                                </div>
+                                            </Link>
+                                        </Button>
+                                    </li>
                                 ))
                             ) : (
-                                <EmptyState
-                                    icon={Briefcase}
-                                    title="Sin proyectos"
-                                    description="Crea el primer proyecto vinculado a este cliente."
-                                    className="py-10"
-                                />
+                                <li>
+                                    <EmptyState
+                                        icon={Briefcase}
+                                        title="Sin proyectos"
+                                        description="Crea el primer proyecto vinculado a este cliente."
+                                        className="py-10"
+                                    />
+                                </li>
                             )}
-                        </div>
+                        </ul>
                     </Surface>
 
                     <Surface variant="dark" className="rounded-[2.5rem] p-6 lg:mt-auto">
                         <h3 className="mb-3 text-lg font-black uppercase tracking-tight">Acciones</h3>
-                        <div className="grid grid-cols-2 gap-2.5">
-                            <ActivityDialog
-                                clientId={id!}
-                                clientName={client.name}
-                                defaultType="email"
-                                email={client.contact.email}
-                                trigger={(
-                                    <ActionTile icon={Mail} label="Email" tone="emerald" />
-                                )}
-                            />
-                            <ActivityDialog
-                                clientId={id!}
-                                clientName={client.name}
-                                defaultType="call"
-                                trigger={(
-                                    <ActionTile icon={Phone} label="Llamada" tone="indigo" />
-                                )}
-                            />
-                            <ActivityDialog
-                                clientId={id!}
-                                clientName={client.name}
-                                defaultType="meeting"
-                                trigger={(
-                                    <ActionTile icon={Video} label="Reunion" tone="blue" />
-                                )}
-                            />
-                            <TaskDialog
-                                clientId={id!}
-                                trigger={(
-                                    <ActionTile icon={Plus} label="Tarea" tone="slate" />
-                                )}
-                            />
-                        </div>
+                        <ul className="grid grid-cols-2 gap-2.5">
+                            <li>
+                                <ActivityDialog
+                                    clientId={id!}
+                                    clientName={client.name}
+                                    defaultType="email"
+                                    email={client.contact.email}
+                                    trigger={(
+                                        <ActionTile icon={Mail} label="Email" tone="emerald" />
+                                    )}
+                                />
+                            </li>
+                            <li>
+                                <ActivityDialog
+                                    clientId={id!}
+                                    clientName={client.name}
+                                    defaultType="call"
+                                    trigger={(
+                                        <ActionTile icon={Phone} label="Llamada" tone="indigo" />
+                                    )}
+                                />
+                            </li>
+                            <li>
+                                <ActivityDialog
+                                    clientId={id!}
+                                    clientName={client.name}
+                                    defaultType="meeting"
+                                    trigger={(
+                                        <ActionTile icon={Video} label="Reunion" tone="blue" />
+                                    )}
+                                />
+                            </li>
+                            <li>
+                                <TaskDialog
+                                    clientId={id!}
+                                    trigger={(
+                                        <ActionTile icon={Plus} label="Tarea" tone="slate" />
+                                    )}
+                                />
+                            </li>
+                        </ul>
                     </Surface>
                 </div>
             </div>

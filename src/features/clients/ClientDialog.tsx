@@ -134,10 +134,10 @@ export default function ClientDialog({
                 <form onSubmit={handleSubmit} className="mt-6 space-y-8">
                     <div className="space-y-6">
                         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                            <FieldGroup label="Nombre Completo">
-                                <IconField icon={<User className="h-5 w-5" />}>
-                                    <Input
-                                        required
+                        <FieldGroup label="Nombre Completo" required>
+                            <IconField icon={<User className="h-5 w-5" />}>
+                                <Input
+                                    required
                                         placeholder="Ej. Juan Perez"
                                         className="pl-12"
                                         value={formData.name}
@@ -213,7 +213,7 @@ export default function ClientDialog({
                             </FieldGroup>
                         </div>
 
-                        <FieldGroup label="Etapa actual" className="border-t border-slate-50 pt-4">
+                        <FieldGroup label="Etapa actual" asFieldset className="border-t border-slate-50 pt-4">
                             <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
                                 {CLIENT_STAGE_OPTIONS.map((stage) => (
                                     <ChoiceTile

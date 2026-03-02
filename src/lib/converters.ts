@@ -2,22 +2,30 @@ import {
     type FirestoreDataConverter,
     type QueryDocumentSnapshot,
     type SnapshotOptions,
+    type WithFieldValue,
     serverTimestamp
 } from 'firebase/firestore';
 import type { Client, Project, Task, Activity, User, Workspace, WorkspaceMember } from '@/types';
 
-const toDate = (val: any) => {
+type FirestoreDateValue = {
+    toDate: () => Date;
+} | Date | null | undefined;
+
+const toDate = (val: FirestoreDateValue) => {
     if (!val) return null;
-    if (typeof val.toDate === 'function') return val.toDate();
+    if (typeof val === 'object' && 'toDate' in val && typeof val.toDate === 'function') return val.toDate();
     if (val instanceof Date) return val;
     return null;
 };
 
 const genericConverter = <T extends { id: string }>(): FirestoreDataConverter<T> => ({
-    toFirestore: (data: any) => {
-        const { id, ...rest } = data;
+    toFirestore: (data: WithFieldValue<T>) => {
+        const rest = { ...(data as WithFieldValue<T> & Record<string, unknown> & { id?: string }) };
+        if ('id' in rest) {
+            Reflect.deleteProperty(rest, 'id');
+        }
         // Filter out undefined values as Firestore doesn't support them
-        const cleanData = Object.keys(rest).reduce((acc: any, key) => {
+        const cleanData = Object.keys(rest).reduce<Record<string, unknown>>((acc, key) => {
             if (rest[key] !== undefined) {
                 acc[key] = rest[key];
             }

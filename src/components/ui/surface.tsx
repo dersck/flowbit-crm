@@ -1,4 +1,5 @@
 import * as React from "react"
+import { Slot } from "@radix-ui/react-slot"
 import { cva } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
@@ -18,12 +19,17 @@ const surfaceVariants = cva("overflow-hidden", {
 
 export interface SurfaceProps extends React.HTMLAttributes<HTMLDivElement> {
     variant?: "premium" | "premiumBordered" | "dark" | "dashed"
+    asChild?: boolean
 }
 
 export const Surface = React.forwardRef<HTMLDivElement, SurfaceProps>(
-    ({ className, variant, ...props }, ref) => (
-        <div ref={ref} className={cn(surfaceVariants({ variant }), className)} {...props} />
-    )
+    ({ className, variant, asChild = false, ...props }, ref) => {
+        const Comp = asChild ? Slot : "div"
+
+        return (
+            <Comp ref={ref} className={cn(surfaceVariants({ variant }), className)} {...props} />
+        )
+    }
 )
 
 Surface.displayName = "Surface"

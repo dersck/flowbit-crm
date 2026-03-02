@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
     Activity,
     AlertCircle,
@@ -39,10 +39,11 @@ import {
 import { toast } from 'sonner';
 import StatCard from '@/components/common/StatCard';
 import { Button } from '@/components/ui/button';
-import { Dialog } from '@/components/ui/dialog';
+import { Dialog, DialogTrigger } from '@/components/ui/dialog';
 import { DialogActions, DialogHero, DialogShell } from '@/components/ui/dialog-shell';
 import { EmptyState } from '@/components/ui/empty-state';
 import { FieldGroup } from '@/components/ui/form-field';
+import { IconButton } from '@/components/ui/icon-button';
 import { Input } from '@/components/ui/input';
 import { PageHeader } from '@/components/ui/page-header';
 import { SegmentedControl, SegmentedControlItem } from '@/components/ui/segmented-control';
@@ -66,6 +67,10 @@ export default function DashboardPage() {
     const { data: clients } = useWorkspaceQuery<Client>('clients', 'dashboard-clients');
     const { data: activities } = useWorkspaceQuery<ActivityType>('activities', 'dashboard-activities');
     const { updateMutation } = useWorkspaceMutation('tasks');
+
+    useEffect(() => {
+        document.title = 'Dashboard | Flowbit CRM';
+    }, []);
 
     const todayTasks = useMemo(() => {
         return tasks?.filter((task) => {
@@ -170,12 +175,16 @@ export default function DashboardPage() {
                     </div>
                 )}
                 actions={(
-                    <SegmentedControl className="self-start md:self-auto">
+                    <SegmentedControl
+                        ariaLabel="Rango de tiempo del dashboard"
+                        value={range}
+                        onValueChange={(value) => setRange(value as TimeRange)}
+                        className="self-start md:self-auto"
+                    >
                         {(['hoy', 'semana', 'mes'] as const).map((currentRange) => (
                             <SegmentedControlItem
                                 key={currentRange}
-                                active={range === currentRange}
-                                onClick={() => setRange(currentRange)}
+                                value={currentRange}
                                 label={currentRange}
                                 className="px-6 py-2 text-xs uppercase tracking-widest"
                             />
@@ -184,50 +193,62 @@ export default function DashboardPage() {
                 )}
             />
 
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-                <StatCard
-                    label="Proyectos"
-                    value={projects?.filter((project) => project.status === 'active').length.toString() || '0'}
-                    icon={Briefcase}
-                    tone="emerald"
-                    trend={<TrendBadge value={stats.projectsStarted} />}
-                    description={`${stats.projectsStarted} nuevos`}
-                    descriptionIcon={TrendingUp}
-                />
-                <StatCard
-                    label="Tareas Listas"
-                    value={tasks?.filter((task) => task.status === 'done').length.toString() || '0'}
-                    icon={CheckCircle2}
-                    tone="indigo"
-                    trend={<TrendBadge value={stats.tasksCompleted} />}
-                    description={`${stats.tasksCompleted} completadas`}
-                    descriptionIcon={TrendingUp}
-                />
-                <StatCard
-                    label="Prospectos"
-                    value={clients?.filter((client) => client.stage === 'nuevo').length.toString() || '0'}
-                    icon={Users}
-                    tone="amber"
-                    trend={<TrendBadge value={stats.clientsAdded} />}
-                    description={`${stats.clientsAdded} este ${range}`}
-                    descriptionIcon={TrendingUp}
-                />
-                <StatCard
-                    label="Interacciones"
-                    value={activities?.length.toString() || '0'}
-                    icon={Activity}
-                    tone="rose"
-                    trend={<span className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-slate-400">Activo</span>}
-                    description={`${stats.activitiesCount} registradas`}
-                    descriptionIcon={TrendingUp}
-                />
-            </div>
+            <section aria-labelledby="dashboard-stats-heading" className="space-y-4">
+                <h2 id="dashboard-stats-heading" className="sr-only">Metricas principales</h2>
+                <ul className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+                    <li>
+                        <StatCard
+                            label="Proyectos"
+                            value={projects?.filter((project) => project.status === 'active').length.toString() || '0'}
+                            icon={Briefcase}
+                            tone="emerald"
+                            trend={<TrendBadge value={stats.projectsStarted} />}
+                            description={`${stats.projectsStarted} nuevos`}
+                            descriptionIcon={TrendingUp}
+                        />
+                    </li>
+                    <li>
+                        <StatCard
+                            label="Tareas Listas"
+                            value={tasks?.filter((task) => task.status === 'done').length.toString() || '0'}
+                            icon={CheckCircle2}
+                            tone="indigo"
+                            trend={<TrendBadge value={stats.tasksCompleted} />}
+                            description={`${stats.tasksCompleted} completadas`}
+                            descriptionIcon={TrendingUp}
+                        />
+                    </li>
+                    <li>
+                        <StatCard
+                            label="Prospectos"
+                            value={clients?.filter((client) => client.stage === 'nuevo').length.toString() || '0'}
+                            icon={Users}
+                            tone="amber"
+                            trend={<TrendBadge value={stats.clientsAdded} />}
+                            description={`${stats.clientsAdded} este ${range}`}
+                            descriptionIcon={TrendingUp}
+                        />
+                    </li>
+                    <li>
+                        <StatCard
+                            label="Interacciones"
+                            value={activities?.length.toString() || '0'}
+                            icon={Activity}
+                            tone="rose"
+                            trend={<span className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-slate-400">Activo</span>}
+                            description={`${stats.activitiesCount} registradas`}
+                            descriptionIcon={TrendingUp}
+                        />
+                    </li>
+                </ul>
+            </section>
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                <Surface variant="premiumBordered" className="lg:col-span-2">
+                <Surface asChild variant="premiumBordered" className="lg:col-span-2">
+                    <section aria-labelledby="dashboard-chart-heading">
                     <div className="flex flex-row items-center justify-between border-b border-slate-50 px-6 py-6">
                         <div>
-                            <h2 className="text-lg font-black uppercase tracking-tight text-slate-900 sm:text-xl">Rendimiento de Tareas</h2>
+                            <h2 id="dashboard-chart-heading" className="text-lg font-black uppercase tracking-tight text-slate-900 sm:text-xl">Rendimiento de Tareas</h2>
                             <p className="mt-1 text-sm font-bold text-slate-400">Comparativa de productividad diaria</p>
                         </div>
                         <div className="flex items-center gap-2 rounded-xl border border-slate-100 bg-slate-50 px-4 py-2">
@@ -281,11 +302,13 @@ export default function DashboardPage() {
                             </ResponsiveContainer>
                         </div>
                     </div>
+                    </section>
                 </Surface>
 
-                <Surface variant="premiumBordered">
+                <Surface asChild variant="premiumBordered">
+                    <section aria-labelledby="dashboard-mix-heading">
                     <div className="border-b border-slate-50 px-6 py-6">
-                        <h2 className="text-lg font-black uppercase tracking-tight text-slate-900 sm:text-xl">Mix de Proyectos</h2>
+                        <h2 id="dashboard-mix-heading" className="text-lg font-black uppercase tracking-tight text-slate-900 sm:text-xl">Mix de Proyectos</h2>
                     </div>
                     <div className="p-6">
                         <div className="h-[220px] w-full sm:h-[240px]">
@@ -312,13 +335,15 @@ export default function DashboardPage() {
                             ))}
                         </div>
                     </div>
+                    </section>
                 </Surface>
             </div>
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                <Surface variant="premiumBordered" className="lg:col-span-2 overflow-hidden border-2 border-dashed">
+                <Surface asChild variant="premiumBordered" className="lg:col-span-2 overflow-hidden border-2 border-dashed">
+                    <section aria-labelledby="dashboard-priorities-heading">
                     <div className="flex flex-row items-center justify-between border-b border-slate-50 bg-slate-50/30 px-6 py-6">
-                        <h2 className="flex items-center gap-3 text-lg font-black uppercase text-slate-900 sm:text-xl">
+                        <h2 id="dashboard-priorities-heading" className="flex items-center gap-3 text-lg font-black uppercase text-slate-900 sm:text-xl">
                             <div className="rounded-2xl bg-indigo-600 p-2 shadow-lg shadow-indigo-200">
                                 <Clock className="h-5 w-5 text-white" />
                             </div>
@@ -330,9 +355,9 @@ export default function DashboardPage() {
                     </div>
                     <div className="p-0">
                         {todayTasks.length > 0 ? (
-                            <div className="divide-y divide-slate-50">
+                            <ul className="divide-y divide-slate-50">
                                 {todayTasks.map((task) => (
-                                    <div key={task.id} className="group flex items-center gap-5 px-6 py-5 transition-all hover:bg-slate-50">
+                                    <li key={task.id} className="group flex items-center gap-5 px-6 py-5 transition-all hover:bg-slate-50">
                                         <div className="h-3 w-3 rounded-full bg-indigo-500 shadow-lg shadow-indigo-100 transition-all group-hover:scale-150" />
                                         <div className="flex-1">
                                             <p className="text-base font-bold leading-tight tracking-tight text-slate-800 transition-colors group-hover:text-indigo-600 sm:text-lg">
@@ -351,18 +376,17 @@ export default function DashboardPage() {
                                                     Retrasada
                                                 </span>
                                             ) : null}
-                                            <Button
+                                            <IconButton
+                                                label={`Completar tarea ${task.title}`}
+                                                icon={CheckCircle2}
                                                 variant="ghost"
-                                                size="icon"
                                                 className="h-10 w-10 scale-90 rounded-2xl border border-slate-200 text-slate-400 transition-all group-hover:scale-100 hover:border-slate-900 hover:bg-slate-900 hover:text-white hover:shadow-xl"
                                                 onClick={() => toggleTask(task)}
-                                            >
-                                                <CheckCircle2 className="h-5 w-5" />
-                                            </Button>
+                                            />
                                         </div>
-                                    </div>
+                                    </li>
                                 ))}
-                            </div>
+                            </ul>
                         ) : (
                             <EmptyState
                                 icon={CheckCircle2}
@@ -372,6 +396,7 @@ export default function DashboardPage() {
                             />
                         )}
                     </div>
+                    </section>
                 </Surface>
 
                 <div className="space-y-6">
@@ -390,59 +415,63 @@ export default function DashboardPage() {
                         </Button>
                     </Surface>
 
-                    <Surface variant="premiumBordered" className="flex items-center gap-5 rounded-[2rem] border-2 p-6 shadow-xl shadow-slate-100/50 transition-all group hover:border-emerald-500/20">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-900 shadow-lg transition-transform group-hover:rotate-6">
-                            <Users className="h-6 w-6 text-white" />
-                        </div>
-                        <div className="flex-1">
-                            <p className="mb-1 text-xs font-black uppercase leading-none tracking-widest text-slate-400">Tu Equipo</p>
-                            <p className="text-base font-black tracking-tight text-slate-900 sm:text-lg">1 / 5 Miembros</p>
-                        </div>
-                        <Button
-                            onClick={() => setIsInviteOpen(true)}
-                            variant="ghost"
-                            size="icon"
-                            className="h-11 w-11 rounded-2xl bg-emerald-50 text-emerald-600 shadow-sm hover:bg-emerald-600 hover:text-white"
-                        >
-                            <UserPlus className="h-5 w-5" />
-                        </Button>
-                    </Surface>
+                    <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
+                        <Surface variant="premiumBordered" className="flex items-center gap-5 rounded-[2rem] border-2 p-6 shadow-xl shadow-slate-100/50 transition-all group hover:border-emerald-500/20">
+                            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-900 shadow-lg transition-transform group-hover:rotate-6">
+                                <Users className="h-6 w-6 text-white" />
+                            </div>
+                            <div className="flex-1">
+                                <p className="mb-1 text-xs font-black uppercase leading-none tracking-widest text-slate-400">Tu Equipo</p>
+                                <p className="text-base font-black tracking-tight text-slate-900 sm:text-lg">1 / 5 Miembros</p>
+                            </div>
+                            <DialogTrigger asChild>
+                                <IconButton
+                                    label="Invitar miembro"
+                                    icon={UserPlus}
+                                    variant="ghost"
+                                    className="h-11 w-11 rounded-2xl bg-emerald-50 text-emerald-600 shadow-sm hover:bg-emerald-600 hover:text-white"
+                                />
+                            </DialogTrigger>
+                        </Surface>
+
+                        <DialogShell size="md">
+                            <DialogHero
+                                icon={<UserPlus className="h-7 w-7" />}
+                                title="Invitar Miembro"
+                                description="Envia una invitacion para unirse a tu workspace."
+                                tone="emerald"
+                            />
+
+                            <form
+                                onSubmit={(event) => {
+                                    event.preventDefault();
+                                    void sendInvite();
+                                }}
+                                className="mt-5 space-y-6"
+                            >
+                                <FieldGroup label="Correo Electronico">
+                                    {(fieldProps) => (
+                                        <Input
+                                            {...fieldProps}
+                                            type="email"
+                                            placeholder="ejemplo@flowbit.com"
+                                            value={inviteEmail}
+                                            onChange={(event) => setInviteEmail(event.target.value)}
+                                        />
+                                    )}
+                                </FieldGroup>
+
+                                <DialogActions
+                                    onCancel={() => setIsInviteOpen(false)}
+                                    confirmLabel="Enviar Invitacion"
+                                    confirmVariant="confirm"
+                                    disabled={!inviteEmail}
+                                />
+                            </form>
+                        </DialogShell>
+                    </Dialog>
                 </div>
             </div>
-
-            <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
-                <DialogShell size="md">
-                    <DialogHero
-                        icon={<UserPlus className="h-7 w-7" />}
-                        title="Invitar Miembro"
-                        description="Envia una invitacion para unirse a tu workspace."
-                        tone="emerald"
-                    />
-
-                    <form
-                        onSubmit={(event) => {
-                            event.preventDefault();
-                            void sendInvite();
-                        }}
-                        className="mt-5 space-y-6"
-                    >
-                        <FieldGroup label="Correo Electronico">
-                            <Input
-                                placeholder="ejemplo@flowbit.com"
-                                value={inviteEmail}
-                                onChange={(event) => setInviteEmail(event.target.value)}
-                            />
-                        </FieldGroup>
-
-                        <DialogActions
-                            onCancel={() => setIsInviteOpen(false)}
-                            confirmLabel="Enviar Invitacion"
-                            confirmVariant="confirm"
-                            disabled={!inviteEmail}
-                        />
-                    </form>
-                </DialogShell>
-            </Dialog>
         </div>
     );
 }

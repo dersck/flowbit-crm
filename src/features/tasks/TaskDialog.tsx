@@ -71,7 +71,7 @@ export default function TaskDialog({ clientId, projectId, trigger }: TaskDialogP
 
                 <form onSubmit={handleSubmit} className="mt-6 space-y-8">
                     <div className="space-y-6">
-                        <FieldGroup label="Titulo de la tarea">
+                        <FieldGroup label="Titulo de la tarea" required>
                             <Input
                                 required
                                 placeholder="Ej. Enviar propuesta comercial"
@@ -91,7 +91,7 @@ export default function TaskDialog({ clientId, projectId, trigger }: TaskDialogP
                             </IconField>
                         </FieldGroup>
 
-                        <FieldGroup label="Prioridad">
+                        <FieldGroup label="Prioridad" asFieldset>
                             <div className="grid grid-cols-3 gap-3">
                                 {[1, 2, 3].map((priority) => (
                                     <ChoiceTile

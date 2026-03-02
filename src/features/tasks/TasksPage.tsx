@@ -1,4 +1,4 @@
-import { useMemo, useState, type ComponentType } from 'react';
+import { useEffect, useMemo, useState, type ComponentType } from 'react';
 import {
     Calendar,
     CheckCircle2,
@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { EmptyState } from '@/components/ui/empty-state';
+import { IconButton } from '@/components/ui/icon-button';
 import { MetaChip } from '@/components/ui/meta-chip';
 import { PageHeader } from '@/components/ui/page-header';
 import { Surface } from '@/components/ui/surface';
@@ -50,6 +51,10 @@ export default function TasksPage() {
 
     const { data: tasks, isLoading } = useWorkspaceQuery<Task>('tasks', 'all-tasks');
     const { updateMutation, deleteMutation } = useWorkspaceMutation('tasks');
+
+    useEffect(() => {
+        document.title = 'Tareas | Flowbit CRM';
+    }, []);
 
     const filteredTasks = useMemo(() => {
         return tasks?.filter((task) => {
@@ -103,61 +108,74 @@ export default function TasksPage() {
 
     if (isLoading) {
         return (
-            <div className="space-y-4 animate-pulse">
+            <ul className="space-y-4 animate-pulse">
                 {[1, 2, 3, 4, 5].map((item) => (
-                    <div key={item} className="h-16 rounded-2xl border border-slate-100 bg-white" />
+                    <li key={item} className="h-16 rounded-2xl border border-slate-100 bg-white" />
                 ))}
-            </div>
+            </ul>
         );
     }
 
     return (
         <div className="flex h-full flex-col gap-10 lg:flex-row">
-            <Surface variant="premiumBordered" className="w-full rounded-[2rem] p-3 lg:sticky lg:top-6 lg:w-56 lg:self-start">
-                <div className="flex flex-col gap-1.5">
+            <Surface asChild variant="premiumBordered" className="w-full rounded-[2rem] p-3 lg:sticky lg:top-6 lg:w-56 lg:self-start">
+                <aside>
+                <nav aria-label="Filtros de tareas" className="flex flex-col gap-1.5">
                     <h2 className="mb-4 px-3 text-[10px] font-black uppercase tracking-widest text-slate-400">Organizacion</h2>
-                    <TaskNavLink
-                        icon={Inbox}
-                        label="Bandeja"
-                        active={filter === 'inbox'}
-                        onClick={() => setFilter('inbox')}
-                        count={tasks?.filter((task) => task.status === 'inbox').length}
-                    />
-                    <TaskNavLink
-                        icon={Star}
-                        label="Para Hoy"
-                        active={filter === 'today'}
-                        onClick={() => setFilter('today')}
-                        color="text-amber-500"
-                        count={tasks?.filter((task) => task.scheduledDate && (isToday(new Date(task.scheduledDate)) || isPast(new Date(task.scheduledDate))) && task.status !== 'done').length}
-                    />
-                    <TaskNavLink
-                        icon={Calendar}
-                        label="Proximo"
-                        active={filter === 'upcoming'}
-                        onClick={() => setFilter('upcoming')}
-                        color="text-indigo-500"
-                    />
-                    <TaskNavLink
-                        icon={CheckCircle2}
-                        label="Completado"
-                        active={filter === 'done'}
-                        onClick={() => setFilter('done')}
-                        color="text-emerald-500"
-                    />
-                </div>
+                    <ul className="space-y-1.5">
+                        <li>
+                            <TaskNavLink
+                                icon={Inbox}
+                                label="Bandeja"
+                                active={filter === 'inbox'}
+                                onClick={() => setFilter('inbox')}
+                                count={tasks?.filter((task) => task.status === 'inbox').length}
+                            />
+                        </li>
+                        <li>
+                            <TaskNavLink
+                                icon={Star}
+                                label="Para Hoy"
+                                active={filter === 'today'}
+                                onClick={() => setFilter('today')}
+                                color="text-amber-500"
+                                count={tasks?.filter((task) => task.scheduledDate && (isToday(new Date(task.scheduledDate)) || isPast(new Date(task.scheduledDate))) && task.status !== 'done').length}
+                            />
+                        </li>
+                        <li>
+                            <TaskNavLink
+                                icon={Calendar}
+                                label="Proximo"
+                                active={filter === 'upcoming'}
+                                onClick={() => setFilter('upcoming')}
+                                color="text-indigo-500"
+                            />
+                        </li>
+                        <li>
+                            <TaskNavLink
+                                icon={CheckCircle2}
+                                label="Completado"
+                                active={filter === 'done'}
+                                onClick={() => setFilter('done')}
+                                color="text-emerald-500"
+                            />
+                        </li>
+                    </ul>
+                </nav>
+                </aside>
             </Surface>
 
-            <div className="max-w-4xl flex-1 space-y-8">
+            <section aria-labelledby="tasks-results-heading" className="max-w-4xl flex-1 space-y-8">
                 <PageHeader
                     title={filterMeta[filter].title}
                     subtitle={`${filteredTasks.length} tareas encontradas. ${filterMeta[filter].subtitle}`}
                     actions={<TaskDialog />}
                 />
 
-                <div className="space-y-3">
+                <h2 id="tasks-results-heading" className="sr-only">Listado de tareas</h2>
+                <ul className="space-y-3">
                     {filteredTasks.map((task) => (
-                        <div
+                        <li
                             key={task.id}
                             className="group flex items-center gap-5 rounded-2xl border border-slate-200 bg-white px-6 py-5 transition-all duration-300 hover:border-emerald-500/20 hover:shadow-xl hover:shadow-slate-200/40"
                         >
@@ -196,10 +214,10 @@ export default function TasksPage() {
                                         </MetaChip>
                                     ) : null}
                                     {task.scheduledDate ? (
-                                        <span className="flex items-center gap-1.5 text-[11px] font-bold text-slate-400">
+                                        <time dateTime={task.scheduledDate} className="flex items-center gap-1.5 text-[11px] font-bold text-slate-400">
                                             <Clock className="h-3.5 w-3.5" />
                                             {task.scheduledDate}
-                                        </span>
+                                        </time>
                                     ) : null}
                                     {task.priority === 3 ? (
                                         <PriorityBadge priority={task.priority} />
@@ -208,32 +226,36 @@ export default function TasksPage() {
                             </div>
 
                             <div className="flex translate-x-2 items-center gap-2 opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100">
-                                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-slate-400 hover:bg-slate-100">
-                                    <MoreHorizontal className="h-5 w-5" />
-                                </Button>
-                                <Button
+                                <IconButton
+                                    label={`Mas acciones para ${task.title}`}
+                                    icon={MoreHorizontal}
                                     variant="ghost"
-                                    size="icon"
+                                    className="h-10 w-10 rounded-xl text-slate-400 hover:bg-slate-100"
+                                />
+                                <IconButton
+                                    label={`Eliminar tarea ${task.title}`}
+                                    icon={Trash2}
+                                    variant="ghost"
                                     className="h-10 w-10 rounded-xl text-slate-300 hover:bg-rose-50 hover:text-rose-500"
                                     onClick={() => setDeleteId(task.id)}
-                                >
-                                    <Trash2 className="h-5 w-5" />
-                                </Button>
+                                />
                             </div>
-                        </div>
+                        </li>
                     ))}
 
                     {filteredTasks.length === 0 ? (
-                        <Surface variant="dashed" className="border-slate-100 py-8">
-                            <EmptyState
-                                icon={Inbox}
-                                title="Todo listo"
-                                description="No hay tareas pendientes en esta categoria."
-                            />
-                        </Surface>
+                        <li>
+                            <Surface variant="dashed" className="border-slate-100 py-8">
+                                <EmptyState
+                                    icon={Inbox}
+                                    title="Todo listo"
+                                    description="No hay tareas pendientes en esta categoria."
+                                />
+                            </Surface>
+                        </li>
                     ) : null}
-                </div>
-            </div>
+                </ul>
+            </section>
 
             <ConfirmDialog
                 isOpen={!!deleteId}

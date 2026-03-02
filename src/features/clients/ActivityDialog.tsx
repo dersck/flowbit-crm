@@ -123,22 +123,24 @@ export default function ActivityDialog({
 
                 <form onSubmit={handleSubmit} className="mt-6 space-y-8">
                     <div className="space-y-6">
-                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                            {ACTIVITY_TYPES.map((typeOption) => (
-                                <ChoiceTile
-                                    key={typeOption.id}
-                                    label={typeOption.label}
-                                    icon={typeOption.icon}
-                                    tone={typeOption.tone}
-                                    layout="stack"
-                                    selected={formData.type === typeOption.id}
-                                    onClick={() => setFormData({ ...formData, type: typeOption.id })}
-                                    className="rounded-3xl text-[10px]"
-                                />
-                            ))}
-                        </div>
+                        <FieldGroup label="Tipo de evento" asFieldset>
+                            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                                {ACTIVITY_TYPES.map((typeOption) => (
+                                    <ChoiceTile
+                                        key={typeOption.id}
+                                        label={typeOption.label}
+                                        icon={typeOption.icon}
+                                        tone={typeOption.tone}
+                                        layout="stack"
+                                        selected={formData.type === typeOption.id}
+                                        onClick={() => setFormData({ ...formData, type: typeOption.id })}
+                                        className="rounded-3xl text-[10px]"
+                                    />
+                                ))}
+                            </div>
+                        </FieldGroup>
 
-                        <FieldGroup label="Resumen del evento">
+                        <FieldGroup label="Resumen del evento" required>
                             <Textarea
                                 required
                                 placeholder="Describe brevemente lo ocurrido..."

@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { where } from 'firebase/firestore';
 import { differenceInCalendarDays, format } from 'date-fns';
@@ -18,7 +19,6 @@ import StatCard from '@/components/common/StatCard';
 import { BackLink } from '@/components/ui/back-link';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
-import { FieldGroup } from '@/components/ui/form-field';
 import { PageHeader } from '@/components/ui/page-header';
 import { SegmentedControl, SegmentedControlItem } from '@/components/ui/segmented-control';
 import { Surface } from '@/components/ui/surface';
@@ -44,6 +44,10 @@ export default function ProjectDetailPage() {
     const pendingTasks = tasks?.filter((task) => task.status !== 'done').length || 0;
     const progress = tasks?.length ? Math.round((completedTasks / tasks.length) * 100) : 0;
     const remainingDays = project?.dueDate ? differenceInCalendarDays(project.dueDate, new Date()) : null;
+
+    useEffect(() => {
+        document.title = project ? `${project.name} | Flowbit CRM` : 'Proyecto | Flowbit CRM';
+    }, [project]);
 
     const handleTaskToggle = async (task: Task) => {
         try {
@@ -114,12 +118,16 @@ export default function ProjectDetailPage() {
                         </div>
                     )}
                     actions={(
-                        <SegmentedControl className="bg-white shadow-sm">
+                        <SegmentedControl
+                            ariaLabel="Estado del proyecto"
+                            value={project.status}
+                            onValueChange={(value) => void handleStatusChange(value as Project['status'])}
+                            className="bg-white shadow-sm"
+                        >
                             {PROJECT_STATUS_ORDER.map((status) => (
                                 <SegmentedControlItem
                                     key={status}
-                                    active={project.status === status}
-                                    onClick={() => handleStatusChange(status)}
+                                    value={status}
                                     label={PROJECT_STATUS_CONFIG[status].label}
                                     className="px-6 py-2.5 text-[10px] uppercase tracking-widest"
                                 />
@@ -131,33 +139,39 @@ export default function ProjectDetailPage() {
 
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
                 <div className="space-y-8 lg:col-span-2">
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                        <StatCard
-                            label="Completado"
-                            value={`${progress}%`}
-                            icon={CheckCircle2}
-                            tone="emerald"
-                        />
-                        <StatCard
-                            label="Pendientes"
-                            value={pendingTasks}
-                            icon={Layout}
-                            tone="indigo"
-                        />
-                        <StatCard
-                            label="Dias Restantes"
-                            value={remainingDays ?? '-'}
-                            icon={Calendar}
-                            tone="slate"
-                            badge={
-                                remainingDays !== null ? (
-                                    <span className="text-[10px] font-bold text-slate-400">
-                                        {remainingDays >= 0 ? 'hasta entrega' : 'atrasado'}
-                                    </span>
-                                ) : null
-                            }
-                        />
-                    </div>
+                    <ul className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                        <li>
+                            <StatCard
+                                label="Completado"
+                                value={`${progress}%`}
+                                icon={CheckCircle2}
+                                tone="emerald"
+                            />
+                        </li>
+                        <li>
+                            <StatCard
+                                label="Pendientes"
+                                value={pendingTasks}
+                                icon={Layout}
+                                tone="indigo"
+                            />
+                        </li>
+                        <li>
+                            <StatCard
+                                label="Dias Restantes"
+                                value={remainingDays ?? '-'}
+                                icon={Calendar}
+                                tone="slate"
+                                badge={
+                                    remainingDays !== null ? (
+                                        <span className="text-[10px] font-bold text-slate-400">
+                                            {remainingDays >= 0 ? 'hasta entrega' : 'atrasado'}
+                                        </span>
+                                    ) : null
+                                }
+                            />
+                        </li>
+                    </ul>
 
                     <div className="space-y-6">
                         <div className="flex items-center justify-between">
@@ -177,10 +191,10 @@ export default function ProjectDetailPage() {
                             />
                         </div>
 
-                        <div className="space-y-3">
+                        <ul className="space-y-3">
                             {tasks && tasks.length > 0 ? (
                                 tasks.map((task) => (
-                                    <div
+                                    <li
                                         key={task.id}
                                         className={cn(
                                             'group flex items-center gap-5 rounded-[1.5rem] border p-5 transition-all',
@@ -194,6 +208,7 @@ export default function ProjectDetailPage() {
                                             variant="ghost"
                                             size="icon"
                                             onClick={() => handleTaskToggle(task)}
+                                            aria-label={task.status === 'done' ? `Reabrir tarea ${task.title}` : `Completar tarea ${task.title}`}
                                             className={cn(
                                                 'h-8 w-8 rounded-xl border transition-all',
                                                 task.status === 'done'
@@ -215,39 +230,41 @@ export default function ProjectDetailPage() {
                                             </p>
                                             <div className="mt-1.5 flex items-center gap-3">
                                                 {task.scheduledDate ? (
-                                                    <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                                                    <time dateTime={task.scheduledDate} className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-400">
                                                         <Clock className="h-3 w-3" />
                                                         {task.scheduledDate}
-                                                    </span>
+                                                    </time>
                                                 ) : null}
                                                 {task.priority === 3 ? (
                                                     <PriorityBadge priority={task.priority} />
                                                 ) : null}
                                             </div>
                                         </div>
-                                    </div>
+                                    </li>
                                 ))
                             ) : (
-                                <Surface variant="dashed">
-                                    <EmptyState
-                                        icon={Layout}
-                                        title="Sin tareas"
-                                        description="No hay tareas asignadas a este proyecto."
-                                    />
-                                    <div className="pb-10 text-center">
-                                        <TaskDialog
-                                            clientId={project.clientId}
-                                            projectId={project.id}
-                                            trigger={(
-                                                <Button variant="outline" className="rounded-2xl font-bold">
-                                                    Crear la primera tarea
-                                                </Button>
-                                            )}
+                                <li>
+                                    <Surface variant="dashed">
+                                        <EmptyState
+                                            icon={Layout}
+                                            title="Sin tareas"
+                                            description="No hay tareas asignadas a este proyecto."
                                         />
-                                    </div>
-                                </Surface>
+                                        <div className="pb-10 text-center">
+                                            <TaskDialog
+                                                clientId={project.clientId}
+                                                projectId={project.id}
+                                                trigger={(
+                                                    <Button variant="outline" className="rounded-2xl font-bold">
+                                                        Crear la primera tarea
+                                                    </Button>
+                                                )}
+                                            />
+                                        </div>
+                                    </Surface>
+                                </li>
                             )}
-                        </div>
+                        </ul>
                     </div>
                 </div>
 
@@ -257,37 +274,56 @@ export default function ProjectDetailPage() {
                             <h2 className="text-sm font-black uppercase tracking-widest text-slate-900">Informacion General</h2>
                         </div>
                         <div className="space-y-6 p-8">
-                            <FieldGroup label="Fecha de Inicio">
-                                <div className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50 p-4 font-bold text-slate-700">
-                                    <Calendar className="h-5 w-5 text-indigo-500" />
-                                    {project.startDate ? format(project.startDate, 'dd MMM, yyyy', { locale: es }) : 'No definida'}
+                            <dl className="space-y-6">
+                                <div>
+                                    <dt className="px-1 text-[10px] font-black uppercase tracking-widest text-slate-400">Fecha de Inicio</dt>
+                                    <dd className="mt-2 flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50 p-4 font-bold text-slate-700">
+                                        <Calendar className="h-5 w-5 text-indigo-500" />
+                                        {project.startDate ? (
+                                            <time dateTime={project.startDate.toISOString()}>
+                                                {format(project.startDate, 'dd MMM, yyyy', { locale: es })}
+                                            </time>
+                                        ) : 'No definida'}
+                                    </dd>
                                 </div>
-                            </FieldGroup>
-                            <FieldGroup label="Entrega Estimada">
-                                <div className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50 p-4 font-bold text-slate-700">
-                                    <Calendar className="h-5 w-5 text-rose-500" />
-                                    {project.dueDate ? format(project.dueDate, 'dd MMM, yyyy', { locale: es }) : 'No definida'}
+                                <div>
+                                    <dt className="px-1 text-[10px] font-black uppercase tracking-widest text-slate-400">Entrega Estimada</dt>
+                                    <dd className="mt-2 flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50 p-4 font-bold text-slate-700">
+                                        <Calendar className="h-5 w-5 text-rose-500" />
+                                        {project.dueDate ? (
+                                            <time dateTime={project.dueDate.toISOString()}>
+                                                {format(project.dueDate, 'dd MMM, yyyy', { locale: es })}
+                                            </time>
+                                        ) : 'No definida'}
+                                    </dd>
                                 </div>
-                            </FieldGroup>
-                            {project.description ? (
-                                <FieldGroup label="Descripcion">
-                                    <p className="rounded-2xl border border-slate-100 p-4 text-sm font-medium leading-relaxed text-slate-500">
-                                        {project.description}
-                                    </p>
-                                </FieldGroup>
-                            ) : null}
+                                {project.description ? (
+                                    <div>
+                                        <dt className="px-1 text-[10px] font-black uppercase tracking-widest text-slate-400">Descripcion</dt>
+                                        <dd className="mt-2 rounded-2xl border border-slate-100 p-4 text-sm font-medium leading-relaxed text-slate-500">
+                                            {project.description}
+                                        </dd>
+                                    </div>
+                                ) : null}
+                            </dl>
                             {project.tagIds.length > 0 ? (
-                                <div className="flex flex-wrap gap-2 pt-4">
-                                    {project.tagIds.map((tagId) => (
-                                        <span
-                                            key={tagId}
-                                            className="flex items-center gap-1.5 rounded-lg bg-slate-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-600"
-                                        >
-                                            <Tag className="h-3 w-3" />
-                                            {tagId}
-                                        </span>
-                                    ))}
-                                </div>
+                                <section aria-labelledby="project-tags-heading" className="pt-4">
+                                    <h3 id="project-tags-heading" className="px-1 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                                        Tags
+                                    </h3>
+                                    <ul className="mt-2 flex flex-wrap gap-2">
+                                        {project.tagIds.map((tagId) => (
+                                            <li key={tagId}>
+                                                <span
+                                                    className="flex items-center gap-1.5 rounded-lg bg-slate-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-600"
+                                                >
+                                                    <Tag className="h-3 w-3" />
+                                                    {tagId}
+                                                </span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </section>
                             ) : null}
                         </div>
                     </Surface>

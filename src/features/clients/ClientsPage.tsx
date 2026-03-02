@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Columns, Filter, LayoutGrid, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -29,6 +29,10 @@ export default function ClientsPage() {
         maxBudget: '',
     });
     const [deleteId, setDeleteId] = useState<string | null>(null);
+
+    useEffect(() => {
+        document.title = 'Clientes | Flowbit CRM';
+    }, []);
 
     const hasActiveFilters =
         filters.source.length > 0 ||
@@ -112,14 +116,14 @@ export default function ClientsPage() {
 
     if (isLoading) {
         return (
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3 lg:gap-6">
+            <ul className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3 lg:gap-6">
                 {[1, 2, 3, 4, 5, 6].map((item) => (
-                    <div
+                    <li
                         key={item}
                         className="h-[360px] animate-pulse rounded-[2.5rem] border border-slate-100 bg-white shadow-sm"
                     />
                 ))}
-            </div>
+            </ul>
         );
     }
 
@@ -131,10 +135,14 @@ export default function ClientsPage() {
                 actions={<CreateClientDialog />}
             />
 
-            <div className="flex flex-col items-center gap-4 lg:flex-row">
+            <section aria-label="Herramientas de busqueda y visualizacion" className="flex flex-col items-center gap-4 lg:flex-row">
                 <div className="group relative w-full flex-1">
+                    <label htmlFor="clients-search" className="sr-only">
+                        Buscar por nombre, empresa, email o telefono
+                    </label>
                     <Search className="absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-emerald-600" />
                     <Input
+                        id="clients-search"
                         placeholder="Buscar por nombre, empresa, email o telefono..."
                         className="h-[3.25rem] rounded-2xl border-slate-200 bg-white pl-14 text-base shadow-sm transition-all focus:ring-4 focus:ring-emerald-500/10"
                         value={searchTerm}
@@ -142,83 +150,91 @@ export default function ClientsPage() {
                     />
                 </div>
 
-                <SegmentedControl>
+                <SegmentedControl
+                    ariaLabel="Modo de vista de clientes"
+                    value={viewMode}
+                    onValueChange={(value) => setViewMode(value as 'grid' | 'pipeline')}
+                >
                     <SegmentedControlItem
-                        active={viewMode === 'grid'}
-                        onClick={() => setViewMode('grid')}
+                        value="grid"
                         icon={LayoutGrid}
                         label="Cards"
                     />
                     <SegmentedControlItem
-                        active={viewMode === 'pipeline'}
-                        onClick={() => setViewMode('pipeline')}
+                        value="pipeline"
                         icon={Columns}
                         label="Pipeline"
                     />
                 </SegmentedControl>
 
-                <Button
-                    variant="outline"
-                    onClick={() => setIsFilterOpen(true)}
-                    className={cn(
-                        'h-[3.25rem] gap-3 rounded-2xl border-slate-200 bg-white px-6 font-black transition-all hover:bg-slate-50',
-                        hasActiveFilters && 'border-emerald-200 bg-emerald-50/30 text-emerald-700'
+                <FilterSidebar
+                    isOpen={isFilterOpen}
+                    onOpenChange={setIsFilterOpen}
+                    filters={filters}
+                    setFilters={setFilters}
+                    trigger={(
+                        <Button
+                            variant="outline"
+                            className={cn(
+                                'h-[3.25rem] gap-3 rounded-2xl border-slate-200 bg-white px-6 font-black transition-all hover:bg-slate-50',
+                                hasActiveFilters && 'border-emerald-200 bg-emerald-50/30 text-emerald-700'
+                            )}
+                        >
+                            <Filter className="h-5 w-5" />
+                            Filtros Avanzados
+                            {activeFilterCount > 0 ? (
+                                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-[10px] text-white">
+                                    {activeFilterCount}
+                                </span>
+                            ) : null}
+                        </Button>
                     )}
-                >
-                    <Filter className="h-5 w-5" />
-                    Filtros Avanzados
-                    {activeFilterCount > 0 ? (
-                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-[10px] text-white">
-                            {activeFilterCount}
-                        </span>
-                    ) : null}
-                </Button>
-            </div>
+                />
+            </section>
 
-            {viewMode === 'grid' ? (
-                filteredClients.length > 0 ? (
-                    <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3 lg:gap-6">
-                        {filteredClients.map((client) => (
-                            <ClientCard
-                                key={client.id}
-                                client={client}
-                                onDelete={setDeleteId}
-                                onUpdateStage={handleUpdateStage}
-                                onToggleWhatsApp={handleToggleWhatsApp}
+            <section aria-labelledby="clients-results-heading" className="space-y-4">
+                <h2 id="clients-results-heading" className="sr-only">
+                    Resultados de clientes
+                </h2>
+                {viewMode === 'grid' ? (
+                    filteredClients.length > 0 ? (
+                        <ul className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3 lg:gap-6">
+                            {filteredClients.map((client) => (
+                                <li key={client.id}>
+                                    <ClientCard
+                                        client={client}
+                                        onDelete={setDeleteId}
+                                        onUpdateStage={handleUpdateStage}
+                                        onToggleWhatsApp={handleToggleWhatsApp}
+                                    />
+                                </li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <div className="rounded-[2.5rem] border border-dashed border-slate-200 bg-white shadow-xl shadow-slate-200/30">
+                            <EmptyState
+                                icon={hasActiveFilters || searchTerm ? Search : LayoutGrid}
+                                title={hasActiveFilters || searchTerm ? 'Sin resultados' : 'Aun no hay clientes'}
+                                description={
+                                    hasActiveFilters || searchTerm
+                                        ? 'Ajusta tu busqueda o limpia los filtros para ver mas resultados.'
+                                        : 'Empieza creando tu primer cliente para construir el pipeline.'
+                                }
                             />
-                        ))}
-                    </div>
+                        </div>
+                    )
+                ) : filteredClients.length > 0 ? (
+                    <PipelineView clients={filteredClients} onUpdateStage={handleUpdateStage} />
                 ) : (
                     <div className="rounded-[2.5rem] border border-dashed border-slate-200 bg-white shadow-xl shadow-slate-200/30">
                         <EmptyState
-                            icon={hasActiveFilters || searchTerm ? Search : LayoutGrid}
-                            title={hasActiveFilters || searchTerm ? 'Sin resultados' : 'Aun no hay clientes'}
-                            description={
-                                hasActiveFilters || searchTerm
-                                    ? 'Ajusta tu busqueda o limpia los filtros para ver mas resultados.'
-                                    : 'Empieza creando tu primer cliente para construir el pipeline.'
-                            }
+                            icon={Columns}
+                            title="Pipeline vacio"
+                            description="No hay clientes para mostrar con los filtros actuales."
                         />
                     </div>
-                )
-            ) : filteredClients.length > 0 ? (
-                <PipelineView clients={filteredClients} onUpdateStage={handleUpdateStage} />
-            ) : (
-                <div className="rounded-[2.5rem] border border-dashed border-slate-200 bg-white shadow-xl shadow-slate-200/30">
-                    <EmptyState
-                        icon={Columns}
-                        title="Pipeline vacio"
-                        description="No hay clientes para mostrar con los filtros actuales."
-                    />
-                </div>
-            )}
-
-            <FilterSidebar
-                isOpen={isFilterOpen}
-                onClose={() => setIsFilterOpen(false)}
-                filters={filters}
-                setFilters={setFilters}
-            />
+                )}
+            </section>
 
             <ConfirmDialog
                 isOpen={!!deleteId}

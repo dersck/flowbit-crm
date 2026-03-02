@@ -14,7 +14,7 @@ export default function SourceBadge({ source, className }: SourceBadgeProps) {
     const Icon = config.icon
 
     return (
-        <div
+        <span
             className={cn(
                 "flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[9px] font-black uppercase tracking-tight",
                 config.bg,
@@ -24,6 +24,6 @@ export default function SourceBadge({ source, className }: SourceBadgeProps) {
         >
             <Icon className="h-3 w-3" />
             {source}
-        </div>
+        </span>
     )
 }

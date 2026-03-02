@@ -112,26 +112,28 @@ export default function QuickAddModal({ open, onOpenChange }: QuickAddModalProps
                         tone={activeTab === 'project' ? 'indigo' : activeTab === 'client' ? 'slate' : 'emerald'}
                     />
 
-                    <SegmentedControl className="mt-6 bg-white">
+                    <SegmentedControl
+                        ariaLabel="Tipo de elemento rapido"
+                        className="mt-6 bg-white"
+                        value={activeTab}
+                        onValueChange={(value) => setActiveTab(value as Tab)}
+                    >
                         <SegmentedControlItem
-                            active={activeTab === 'task'}
-                            onClick={() => setActiveTab('task')}
                             icon={CheckCircle2}
                             label="Tarea"
+                            value="task"
                             className="flex-1"
                         />
                         <SegmentedControlItem
-                            active={activeTab === 'client'}
-                            onClick={() => setActiveTab('client')}
                             icon={Users}
                             label="Cliente"
+                            value="client"
                             className="flex-1"
                         />
                         <SegmentedControlItem
-                            active={activeTab === 'project'}
-                            onClick={() => setActiveTab('project')}
                             icon={Briefcase}
                             label="Proyecto"
+                            value="project"
                             className="flex-1"
                         />
                     </SegmentedControl>
@@ -140,7 +142,7 @@ export default function QuickAddModal({ open, onOpenChange }: QuickAddModalProps
                 <form onSubmit={handleCreate} className="space-y-8 p-8">
                     {activeTab === 'task' ? (
                         <div className="animate-in slide-in-from-bottom-2 fade-in space-y-4 duration-300">
-                            <FieldGroup label="Titulo de la Tarea">
+                            <FieldGroup label="Titulo de la Tarea" required>
                                 <Input
                                     placeholder="Ej. Revisar contrato de Acme Corp"
                                     value={taskTitle}
@@ -154,7 +156,7 @@ export default function QuickAddModal({ open, onOpenChange }: QuickAddModalProps
 
                     {activeTab === 'client' ? (
                         <div className="animate-in slide-in-from-bottom-2 fade-in space-y-4 duration-300">
-                            <FieldGroup label="Nombre del Cliente o Empresa">
+                            <FieldGroup label="Nombre del Cliente o Empresa" required>
                                 <Input
                                     placeholder="Ej. Acme Corp"
                                     value={clientName}
@@ -168,7 +170,7 @@ export default function QuickAddModal({ open, onOpenChange }: QuickAddModalProps
 
                     {activeTab === 'project' ? (
                         <div className="animate-in slide-in-from-bottom-2 fade-in space-y-4 duration-300">
-                            <FieldGroup label="Nombre del Proyecto">
+                            <FieldGroup label="Nombre del Proyecto" required>
                                 <Input
                                     placeholder="Ej. Rediseno Web 2026"
                                     value={projectName}
@@ -178,7 +180,7 @@ export default function QuickAddModal({ open, onOpenChange }: QuickAddModalProps
                                 />
                             </FieldGroup>
 
-                            <FieldGroup label="Cliente Vinculado">
+                            <FieldGroup label="Cliente Vinculado" required>
                                 <select
                                     value={projectClientId}
                                     onChange={(event) => setProjectClientId(event.target.value)}

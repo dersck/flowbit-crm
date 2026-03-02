@@ -10,7 +10,13 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+.env
+.env.*
+!.env.example
 *.local
+playwright-report
+test-results
+blob-report
 
 # Editor directories and files
 .vscode/*

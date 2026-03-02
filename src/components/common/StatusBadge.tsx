@@ -17,7 +17,7 @@ export default function StatusBadge({
     const Icon = config.icon
 
     return (
-        <div
+        <span
             className={cn(
                 "inline-flex items-center gap-2 rounded-2xl border px-4 py-2 text-[10px] font-black uppercase tracking-widest shadow-sm",
                 config.color,
@@ -26,6 +26,6 @@ export default function StatusBadge({
         >
             {showIcon && <Icon className="h-3.5 w-3.5" />}
             {config.label}
-        </div>
+        </span>
     )
 }

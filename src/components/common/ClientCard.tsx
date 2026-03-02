@@ -5,6 +5,7 @@ import { es } from "date-fns/locale"
 import type { Client } from "@/types"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { IconButton } from "@/components/ui/icon-button"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -35,7 +36,8 @@ export default function ClientCard({
     onToggleWhatsApp,
 }: ClientCardProps) {
     return (
-        <Card className="group relative flex h-[470px] flex-col overflow-visible rounded-[2.5rem] border-none bg-white shadow-xl shadow-slate-200/40 transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_20px_50px_rgba(0,0,0,0.08)] xl:h-[480px]">
+        <Card asChild className="group relative flex h-[470px] flex-col overflow-visible rounded-[2.5rem] border-none bg-white shadow-xl shadow-slate-200/40 transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_20px_50px_rgba(0,0,0,0.08)] xl:h-[480px]">
+            <article aria-labelledby={`client-card-${client.id}-title`}>
             <CardContent className="flex h-full flex-col p-0">
                 <div className="flex-1 p-6 sm:p-7">
                     <div className="mb-6 flex items-start justify-between">
@@ -56,7 +58,7 @@ export default function ClientCard({
                     </div>
 
                     <Link to={`/clients/${client.id}`} className="block h-12 group/title">
-                        <h3 className="truncate text-[clamp(1.55rem,2vw,2rem)] font-black leading-tight tracking-tighter text-slate-900 transition-colors group-hover/title:text-emerald-600">
+                        <h3 id={`client-card-${client.id}-title`} className="truncate text-[clamp(1.55rem,2vw,2rem)] font-black leading-tight tracking-tighter text-slate-900 transition-colors group-hover/title:text-emerald-600">
                             {client.name}
                         </h3>
                         {client.company ? (
@@ -69,60 +71,64 @@ export default function ClientCard({
                         )}
                     </Link>
 
-                    <div className="mt-5 space-y-2.5">
+                    <ul className="mt-5 space-y-2.5">
                         {client.contact.email ? (
-                            <ContactItem
-                                icon={Mail}
-                                value={client.contact.email}
-                                tone="emerald"
-                                className="text-sm"
-                            />
+                            <li>
+                                <ContactItem
+                                    icon={Mail}
+                                    value={client.contact.email}
+                                    tone="emerald"
+                                    className="text-sm"
+                                />
+                            </li>
                         ) : (
-                            <div className="h-10" />
+                            <li aria-hidden="true" className="h-10" />
                         )}
                         {client.contact.phone ? (
-                            <ContactItem
-                                icon={Phone}
-                                value={<span className="font-mono">{client.contact.phone}</span>}
-                                tone="indigo"
-                                href={`tel:${client.contact.phone}`}
-                                className="text-sm"
-                            />
+                            <li>
+                                <ContactItem
+                                    icon={Phone}
+                                    value={<span className="font-mono">{client.contact.phone}</span>}
+                                    tone="indigo"
+                                    href={`tel:${client.contact.phone}`}
+                                    className="text-sm"
+                                />
+                            </li>
                         ) : (
-                            <div className="h-10" />
+                            <li aria-hidden="true" className="h-10" />
                         )}
                         {client.budget ? (
-                            <ContactItem
-                                icon={Landmark}
-                                value={<span className="font-black text-amber-700">${client.budget.toLocaleString()}</span>}
-                                tone="amber"
-                                className="text-sm"
-                            />
+                            <li>
+                                <ContactItem
+                                    icon={Landmark}
+                                    value={<span className="font-black text-amber-700">${client.budget.toLocaleString()}</span>}
+                                    tone="amber"
+                                    className="text-sm"
+                                />
+                            </li>
                         ) : (
-                            <div className="h-10" />
+                            <li aria-hidden="true" className="h-10" />
                         )}
-                    </div>
+                    </ul>
                 </div>
 
                 <div className="mt-auto flex items-center justify-center gap-2.5 rounded-b-[2.5rem] border-t border-slate-50 bg-slate-50/50 px-7 py-5 transition-colors duration-300 group-hover:bg-white sm:px-8">
-                    <Button
+                    <IconButton
+                        label={`Eliminar cliente ${client.name}`}
+                        icon={Trash2}
                         variant="ghost"
-                        size="icon"
                         className="h-11 w-11 flex-shrink-0 rounded-2xl text-slate-300 transition-all hover:bg-rose-50 hover:text-rose-500"
                         onClick={() => onDelete(client.id)}
-                    >
-                        <Trash2 className="h-5 w-5" />
-                    </Button>
+                    />
 
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button
+                            <IconButton
+                                label={`Abrir acciones de ${client.name}`}
+                                icon={MoreVertical}
                                 variant="ghost"
-                                size="icon"
                                 className="h-11 w-11 rounded-2xl text-slate-300 transition-all hover:bg-slate-100 hover:text-slate-900"
-                            >
-                                <MoreVertical className="h-5 w-5" />
-                            </Button>
+                            />
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="center" className="w-64">
                             <DropdownMenuLabel className="p-3 pb-2 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">
@@ -170,6 +176,7 @@ export default function ClientCard({
                                 variant="outline"
                                 size="icon"
                                 disabled
+                                aria-label={`WhatsApp no disponible para ${client.name}`}
                                 className="h-11 w-11 flex-shrink-0 rounded-2xl border-none bg-slate-50 text-slate-300 opacity-40"
                                 title="Este numero no tiene WhatsApp"
                             >
@@ -185,6 +192,7 @@ export default function ClientCard({
                                     href={`https://wa.me/${client.contact.phone.replace(/[^0-9]/g, '')}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
+                                    aria-label={`Abrir WhatsApp de ${client.name}`}
                                 >
                                     <WhatsAppIcon className="h-5 w-5" />
                                 </a>
@@ -198,12 +206,13 @@ export default function ClientCard({
                         size="icon"
                         className="h-11 w-11 flex-shrink-0 rounded-2xl border-slate-200 text-slate-400 transition-all active:scale-95 hover:border-emerald-100 hover:text-emerald-600 hover:shadow-xl"
                     >
-                        <Link to={`/clients/${client.id}`}>
+                        <Link to={`/clients/${client.id}`} aria-label={`Abrir detalle de ${client.name}`}>
                             <ExternalLink className="h-5 w-5" />
                         </Link>
                     </Button>
                 </div>
             </CardContent>
+            </article>
         </Card>
     )
 }

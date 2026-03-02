@@ -2,6 +2,7 @@ import { ExternalLink, Trash2, User } from "lucide-react"
 import { Link } from "react-router-dom"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { IconButton } from "@/components/ui/icon-button"
 import { MetaChip } from "@/components/ui/meta-chip"
 import { cn } from "@/lib/utils"
 import type { Project } from "@/types"
@@ -23,7 +24,8 @@ export default function ProjectBoardCard({
     const statusConfig = PROJECT_STATUS_CONFIG[project.status]
 
     return (
-        <Card className="group cursor-pointer overflow-hidden rounded-3xl border-slate-200 bg-white shadow-sm transition-all duration-300 hover:border-emerald-500/10 hover:shadow-2xl hover:shadow-slate-200/50">
+        <Card asChild className="group cursor-pointer overflow-hidden rounded-3xl border-slate-200 bg-white shadow-sm transition-all duration-300 hover:border-emerald-500/10 hover:shadow-2xl hover:shadow-slate-200/50">
+            <article aria-labelledby={`project-card-${project.id}-title`}>
             <CardContent className="p-6">
                 <div className="mb-4 flex items-start justify-between gap-3">
                     <MetaChip
@@ -34,19 +36,18 @@ export default function ProjectBoardCard({
                         {clientName || "Sin cliente"}
                     </MetaChip>
                     <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                        <Button
+                        <IconButton
+                            label={`Eliminar proyecto ${project.name}`}
+                            icon={Trash2}
                             variant="ghost"
-                            size="icon"
                             className="h-8 w-8 rounded-lg text-slate-300 hover:text-rose-500"
                             onClick={() => onDelete(project.id)}
-                        >
-                            <Trash2 className="h-4 w-4" />
-                        </Button>
+                        />
                     </div>
                 </div>
 
                 <Link to={`/projects/${project.id}`}>
-                    <h3 className="line-clamp-2 text-xl font-black leading-tight tracking-tighter text-slate-900 transition-colors group-hover:text-indigo-600">
+                    <h3 id={`project-card-${project.id}-title`} className="line-clamp-2 text-xl font-black leading-tight tracking-tighter text-slate-900 transition-colors group-hover:text-indigo-600">
                         {project.name}
                     </h3>
                 </Link>
@@ -88,12 +89,13 @@ export default function ProjectBoardCard({
                         size="icon"
                         className="h-9 w-9 rounded-xl border-transparent bg-slate-50 text-slate-300 hover:border-indigo-100 hover:bg-white hover:text-indigo-600"
                     >
-                        <Link to={`/projects/${project.id}`}>
+                        <Link to={`/projects/${project.id}`} aria-label={`Abrir detalle de ${project.name}`}>
                             <ExternalLink className="h-4 w-4" />
                         </Link>
                     </Button>
                 </div>
             </CardContent>
+            </article>
         </Card>
     )
 }

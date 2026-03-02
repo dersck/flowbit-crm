@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/features/auth/AuthContext';
 import { auth } from '@/lib/firebase';
 import { cn } from '@/lib/utils';
+import { IconButton } from '@/components/ui/icon-button';
 
 const navItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
@@ -52,7 +53,7 @@ export default function Sidebar() {
                 ) : null}
             </div>
 
-            <nav className="scrollbar-hide flex-1 space-y-2 overflow-y-auto px-4 py-8">
+            <nav aria-label="Principal" className="scrollbar-hide flex-1 overflow-y-auto px-4 py-8">
                 <p
                     className={cn(
                         'mb-4 px-3 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500',
@@ -61,28 +62,31 @@ export default function Sidebar() {
                 >
                     {collapsed ? '...' : 'Menu Principal'}
                 </p>
-                {navItems.map((item) => (
-                    <NavLink
-                        key={item.path}
-                        to={item.path}
-                        className={({ isActive }) =>
-                            cn(
-                                'group relative flex items-center gap-3 rounded-2xl px-4 py-3 transition-all duration-300',
-                                isActive
-                                    ? 'bg-emerald-600/10 font-bold text-emerald-400'
-                                    : 'hover:bg-slate-800/50 hover:text-white'
-                            )
-                        }
-                    >
-                        <item.icon className={cn('h-5 w-5 transition-transform group-hover:scale-110', collapsed ? 'mx-auto' : '')} />
-                        {!collapsed ? <span className="text-sm tracking-tight">{item.label}</span> : null}
-                        {collapsed ? (
-                            <div className="pointer-events-none absolute left-full z-[100] ml-4 whitespace-nowrap rounded-lg border border-slate-700 bg-slate-800 px-3 py-1 text-xs font-bold text-white opacity-0 shadow-xl transition-opacity group-hover:opacity-100">
-                                {item.label}
-                            </div>
-                        ) : null}
-                    </NavLink>
-                ))}
+                <ul className="space-y-2">
+                    {navItems.map((item) => (
+                        <li key={item.path}>
+                            <NavLink
+                                to={item.path}
+                                className={({ isActive }) =>
+                                    cn(
+                                        'group relative flex items-center gap-3 rounded-2xl px-4 py-3 transition-all duration-300',
+                                        isActive
+                                            ? 'bg-emerald-600/10 font-bold text-emerald-400'
+                                            : 'hover:bg-slate-800/50 hover:text-white'
+                                    )
+                                }
+                            >
+                                <item.icon className={cn('h-5 w-5 transition-transform group-hover:scale-110', collapsed ? 'mx-auto' : '')} />
+                                {!collapsed ? <span className="text-sm tracking-tight">{item.label}</span> : null}
+                                {collapsed ? (
+                                    <div className="pointer-events-none absolute left-full z-[100] ml-4 whitespace-nowrap rounded-lg border border-slate-700 bg-slate-800 px-3 py-1 text-xs font-bold text-white opacity-0 shadow-xl transition-opacity group-hover:opacity-100">
+                                        {item.label}
+                                    </div>
+                                ) : null}
+                            </NavLink>
+                        </li>
+                    ))}
+                </ul>
             </nav>
 
             <div className="space-y-2 border-t border-slate-800/50 bg-slate-900/50 p-4 backdrop-blur-md">
@@ -101,31 +105,49 @@ export default function Sidebar() {
                     {!collapsed ? <span className="text-sm tracking-tight">Ajustes</span> : null}
                 </NavLink>
 
-                <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={handleLogout}
-                    className="group h-auto w-full justify-start gap-3 rounded-2xl px-4 py-3 text-slate-400 hover:bg-rose-500/10 hover:text-rose-400"
-                >
-                    <LogOut className={cn('h-5 w-5', collapsed ? 'mx-auto' : 'group-hover:rotate-12')} />
-                    {!collapsed ? <span className="text-sm font-bold tracking-tight">Cerrar sesion</span> : null}
-                </Button>
+                {collapsed ? (
+                    <IconButton
+                        label="Cerrar sesion"
+                        icon={LogOut}
+                        variant="ghost"
+                        onClick={handleLogout}
+                        className="h-11 w-full rounded-2xl text-slate-400 hover:bg-rose-500/10 hover:text-rose-400"
+                    />
+                ) : (
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={handleLogout}
+                        className="group h-auto w-full justify-start gap-3 rounded-2xl px-4 py-3 text-slate-400 hover:bg-rose-500/10 hover:text-rose-400"
+                    >
+                        <LogOut className={cn('h-5 w-5', 'group-hover:rotate-12')} />
+                        <span className="text-sm font-bold tracking-tight">Cerrar sesion</span>
+                    </Button>
+                )}
 
-                <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => setCollapsed((current) => !current)}
-                    className="group mt-4 h-auto w-full justify-start gap-3 rounded-2xl border border-slate-800/50 bg-slate-800/30 px-4 py-3 text-slate-500 hover:bg-slate-800/80 hover:text-white"
-                >
-                    <div className={cn('flex flex-shrink-0 items-center justify-center transition-transform duration-500', collapsed && 'rotate-180')}>
-                        {collapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
-                    </div>
-                    {!collapsed ? (
+                {collapsed ? (
+                    <IconButton
+                        label="Expandir sidebar"
+                        icon={ChevronRight}
+                        variant="ghost"
+                        onClick={() => setCollapsed((current) => !current)}
+                        className="mt-4 h-11 w-full rounded-2xl border border-slate-800/50 bg-slate-800/30 text-slate-500 hover:bg-slate-800/80 hover:text-white"
+                    />
+                ) : (
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => setCollapsed((current) => !current)}
+                        className="group mt-4 h-auto w-full justify-start gap-3 rounded-2xl border border-slate-800/50 bg-slate-800/30 px-4 py-3 text-slate-500 hover:bg-slate-800/80 hover:text-white"
+                    >
+                        <div className={cn('flex flex-shrink-0 items-center justify-center transition-transform duration-500')}>
+                            <ChevronLeft className="h-5 w-5" />
+                        </div>
                         <span className="text-xs font-black uppercase tracking-widest opacity-60 transition-opacity group-hover:opacity-100">
                             Contraer Sidebar
                         </span>
-                    ) : null}
-                </Button>
+                    </Button>
+                )}
             </div>
         </aside>
     );

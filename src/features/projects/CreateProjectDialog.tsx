@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { Briefcase, Calendar, Plus, Tag } from 'lucide-react';
 import { toast } from 'sonner';
 import { useWorkspaceMutation } from '@/hooks/useFirestore';
-import { Button } from '@/components/ui/button';
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { DialogActions, DialogHero, DialogShell } from '@/components/ui/dialog-shell';
 import { FieldGroup, IconField } from '@/components/ui/form-field';
+import { IconButton } from '@/components/ui/icon-button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -55,9 +55,12 @@ export default function CreateProjectDialog({ clientId, trigger }: CreateProject
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
                 {trigger || (
-                    <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-400 hover:text-emerald-600">
-                        <Plus className="h-4 w-4" />
-                    </Button>
+                    <IconButton
+                        label="Crear proyecto"
+                        icon={Plus}
+                        variant="ghost"
+                        className="h-8 w-8 text-slate-400 hover:text-emerald-600"
+                    />
                 )}
             </DialogTrigger>
             <DialogShell size="md">
@@ -70,7 +73,7 @@ export default function CreateProjectDialog({ clientId, trigger }: CreateProject
 
                 <form onSubmit={handleSubmit} className="mt-6 space-y-8">
                     <div className="space-y-6">
-                        <FieldGroup label="Nombre del Proyecto">
+                        <FieldGroup label="Nombre del Proyecto" required>
                             <IconField icon={<Tag className="h-5 w-5" />}>
                                 <Input
                                     required

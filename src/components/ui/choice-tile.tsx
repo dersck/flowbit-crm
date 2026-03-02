@@ -38,6 +38,7 @@ export function ChoiceTile({
             type="button"
             variant="ghost"
             onClick={onClick}
+            aria-pressed={selected}
             className={cn(
                 "h-auto rounded-2xl border-2 text-xs font-bold uppercase tracking-widest outline-none",
                 layout === "stack"

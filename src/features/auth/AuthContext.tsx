@@ -4,27 +4,33 @@ import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import type { User as AppUser } from '@/types';
 
-const toDate = (val: any) => {
+type FirestoreDateValue = {
+    toDate: () => Date;
+} | Date | null | undefined;
+
+const toDate = (val: FirestoreDateValue) => {
     if (!val) return null;
-    if (typeof val.toDate === 'function') return val.toDate();
+    if (typeof val === 'object' && 'toDate' in val && typeof val.toDate === 'function') return val.toDate();
     if (val instanceof Date) return val;
     return null;
 };
 
-interface AuthContextType {
+export interface AuthContextType {
     user: FirebaseUser | null;
     appUser: AppUser | null;
     loading: boolean;
     refreshAppUser: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType>({
+// eslint-disable-next-line react-refresh/only-export-components
+export const AuthContext = createContext<AuthContextType>({
     user: null,
     appUser: null,
     loading: true,
     refreshAppUser: async () => { },
 });
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
