@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "check:repo-safety": "node scripts/check-tracked-env.mjs",
     "lint": "eslint .",
     "test": "vitest",
     "test:run": "vitest run",
